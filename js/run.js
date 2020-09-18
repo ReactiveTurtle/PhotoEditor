@@ -1,20 +1,37 @@
-const editor = {
-    canvas: new Canvas(),
-    canvasStates: [],
-    filters: []
+class Rectangle {
+    constructor(fillcolor = "#000000") {
+        this.fillColor = fillcolor;
+    }
 }
 
-class Canvas {
+class CanvasModel {
     constructor() {
         this.texts = [];
         this.primitives = [new Rectangle()];
         this.arts = [];
         this.selectedField = [];
     }
-}
 
-class Rectangle {
-    constructor(fillcolor = "#FFFFFF") {
-        this.fillColor = fillcolor;
+    draw(canvas) {
+        let canvasContext = canvas.getContext("2d");
+        this.primitives.forEach((value) => {
+            canvasContext.fillColor = value.fillColor;
+            canvasContext.fillRect(0, 0, canvas.width, canvas.height);
+        });
     }
 }
+
+const editor = {
+    canvasModel: new CanvasModel(),
+    canvasStates: [],
+    filters: []
+}
+
+var canvas = document.getElementById("canvas");
+canvas.style.overflow = "hidden";
+
+canvas.width = innerWidth;
+canvas.height = innerHeight;
+
+editor.canvasModel.draw(canvas);
+
