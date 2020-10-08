@@ -1,8 +1,3 @@
-type ImageHistory = {
-    history: Array<ImageData>,
-    currentHistoryPosition: number
-}
-
 type Vector2 = {
     x: number,
     y: number
@@ -62,6 +57,11 @@ type Editor = {
     canvas: ImageData
 }
 
+type ImageHistory = {
+    history: Array<ImageData>,
+    currentHistoryPosition: number
+}
+
 function createNewCanvas(editor: Editor, size: Vector2) {
     editor.canvas = new ImageData(size.x, size.y);
     editor.canvas.data.fill(255)
@@ -114,25 +114,42 @@ function moveSelectedArea(editor: Editor, position: Vector2) {
 
 function cutSelectedArea(editor: Editor) {
     var art: Art;
-    if (typeof editor.selectedObject == typeof art)) {
-        
+    if (typeof editor.selectedObject == typeof art) {
+
     }
     return editor;
 }
 
-function pasteText(editor: Editor, text: TextObject) {
-    editor.selectedObject = text;
-    return editor;
+function replaceSelectedObject(history: ImageHistory, editor: Editor, newSelectedObject: TextObject | Triangle | Rectangle | Circle | Art): void {
+    if (editor.selectedObject != null) {
+        drawObject(editor.canvas, editor.selectedObject);
+    }
+    if (newSelectedObject != null) {
+        history.history.push(editor.canvas);
+        history.currentHistoryPosition++;
+    }
+    editor.selectedObject = newSelectedObject;
 }
 
-function pastePrimitive(editor: Editor, primitive: Triangle | Rectangle | Circle) {
-    editor.selectedObject = primitive;
-    return editor;
-}
+function drawObject(canvas: ImageData, selectedObject: TextObject | Triangle | Rectangle | Circle | Art) {
+    let triangle: Triangle;
+    let rectangle: Rectangle;
+    let circle: Circle;
+    let art: Art;
+    let textObject: TextObject;
 
-function pasteArt(editor: Editor, art: Art) {
-    editor.selectedObject = art;
-    return editor;
+    switch (typeof selectedObject) {
+        case typeof triangle:
+            break;
+        case typeof rectangle:
+            break;
+        case typeof circle:
+            break;
+        case typeof art:
+            break;
+        case typeof textObject:
+            break;
+    }
 }
 
 function applyFilter(editor: Editor, filter: string) {
@@ -147,9 +164,9 @@ function applyFilter(editor: Editor, filter: string) {
         throw new ReferenceError(`Incorrect format of 'filter' parameter: ${filter}`);
     }
     var colorLevels = [parseInt(filterCopy.substring(0, 2), 16) / 255,
-        parseInt(filterCopy.substring(2, 4), 16) / 255,
-        parseInt(filterCopy.substring(4, 6), 16) / 255,
-        parseInt(filterCopy.substring(6, 8), 16) / 255
+    parseInt(filterCopy.substring(2, 4), 16) / 255,
+    parseInt(filterCopy.substring(4, 6), 16) / 255,
+    parseInt(filterCopy.substring(6, 8), 16) / 255
     ] // RGBA
     for (var i = 0; i < editor.canvas.height; i++) {
         for (var j = 0; i < editor.canvas.width; j++) {
@@ -199,7 +216,9 @@ function exportObject(editor: Editor): void {
 function undo(history: ImageHistory, editor: Editor) {
     if (history.history.length > 0) {
         if (history.currentHistoryPosition > 0) {
+            replaceSelectedObject(history, editor, null);
             history.currentHistoryPosition--;
+            editor.canvas = history.history[history.currentHistoryPosition];
         }
     }
     return editor;
@@ -209,6 +228,7 @@ function redo(history: ImageHistory, editor: Editor) {
     if (history.history.length > 0) {
         if (history.currentHistoryPosition < history.history.length - 1) {
             history.currentHistoryPosition++;
+            editor.canvas = history.history[history.currentHistoryPosition];
         }
     }
     return editor;
