@@ -55,6 +55,13 @@ type ImageHistory = {
   currentHistoryPosition: number;
 };
 
+enum Filter {
+  Grey,
+  Red,
+  Green,
+  Blue,
+}
+
 export {
   Vector2,
   SelectedArea,
@@ -67,40 +74,38 @@ export {
   ImageHistory,
 };
 
-function createNewCanvas(editor: Editor, size: Vector2) {
-  editor.canvas = new ImageData(size.x, size.y);
-  editor.canvas.data.fill(255);
-  return editor;
+function copyImageData(imageData: ImageData) {
+  const newImageData: ImageData = new ImageData(
+    imageData.width,
+    imageData.height
+  );
+  newImageData.data.set(new Uint8ClampedArray(imageData.data));
+  return newImageData;
 }
 
-function copyImageData(
-  dst: ImageData,
-  src: ImageData,
-  width?: number,
-  height?: number,
-  srcPosition?: Vector2
+function copySelectedObject(
+  selectedObject: TextObject | Triangle | Rectangle | Circle | Art
 ) {
-  if (srcPosition == undefined) {
-    var defaultPosition: Vector2;
-    defaultPosition.x = 0;
-    defaultPosition.y = 0;
-    srcPosition = defaultPosition;
-  }
-  if (width == undefined) {
-    width = dst.width;
-  }
-  if (height == undefined) {
-    height = dst.height;
-  }
-  for (var i = 0; i < height; i++) {
-    for (var j = 0; i < width; j++) {
-      var dstIndex = (i * width + j) * 4;
-      var srcIndex = ((i + srcPosition.y) * src.width + j + srcPosition.x) * 4;
-      for (var k = 0; k < 4; k++) {
-        dst.data[dstIndex + k] = src.data[srcIndex + k];
-      }
-    }
-  }
+  let newSelectedObject: TextObject | Triangle | Rectangle | Circle | Art = {
+    ...selectedObject,
+    size: {
+      ...(<TextObject | Triangle | Rectangle | Art>selectedObject).size,
+    },
+    position: {
+      ...selectedObject.position,
+    },
+  };
+  return newSelectedObject;
+}
+
+function createNewCanvas(editor: Editor, size: Vector2) {
+  const newCanvas = new ImageData(size.x, size.y);
+  newCanvas.data.fill(255);
+  const newEditor: Editor = {
+    ...editor,
+    canvas: newCanvas,
+  };
+  return newEditor;
 }
 
 function editCanvasSize(editor: Editor, size: Vector2) {
@@ -108,17 +113,29 @@ function editCanvasSize(editor: Editor, size: Vector2) {
   imageData.data.fill(255);
   let minWidth = Math.min(size.x, editor.canvas.width);
   let minHeight = Math.min(size.y, editor.canvas.height);
-  copyImageData(imageData, editor.canvas, minWidth, minHeight);
-  editor.canvas.data.set(imageData.data);
-  return editor;
+
+  for (var i = 0; i < minHeight; i++) {
+    for (var j = 0; i < minWidth; j++) {
+      var dataIndex = (i * size.x + j) * 4;
+      var canvasDataIndex = (i * editor.canvas.width + j) * 4;
+      for (var k = 0; k < 4; k++) {
+        imageData.data[dataIndex + k] = editor.canvas.data[canvasDataIndex + k];
+      }
+    }
+  }
+  const newEditor: Editor = {
+    ...editor,
+    canvas: imageData,
+  };
+  return newEditor;
 }
 
 function selectArea(editor: Editor, selectedArea: SelectedArea) {
   var art: Art;
   art.position = selectedArea.position;
   art.size = selectedArea.size;
-  var imageData = new ImageData(art.size.x, art.size.y);
-  art.image = imageData;
+  var newCanvas = new ImageData(art.size.x, art.size.y);
+  art.image = newCanvas;
   for (var i = 0; i < art.size.x; i++) {
     for (var j = 0; i < art.size.y; j++) {
       var dstIndex = (i * art.size.x + j) * 4;
@@ -130,38 +147,59 @@ function selectArea(editor: Editor, selectedArea: SelectedArea) {
       art.image.data[srcIndex + 3] = 0;
     }
   }
-  editor.selectedObject = art;
-  return editor;
+  const newEditor: Editor = {
+    ...editor,
+    selectedObject: art,
+    canvas: newCanvas,
+  };
+  return newEditor;
 }
 
-function moveSelectedArea(editor: Editor, position: Vector2) {
+function moveSelectedObject(editor: Editor, position: Vector2) {
   editor.selectedObject.position = position;
-  return editor;
+
+  const newEditor: Editor = {
+    ...editor,
+    selectedObject: {
+      ...editor.selectedObject,
+      position: position,
+    },
+  };
+  return newEditor;
 }
 
 function cutSelectedArea(editor: Editor) {
   var art: Art;
-  var selectedObject = <Art>editor.selectedObject;
+  var selectedObject = editor.selectedObject;
+  const newEditor: Editor = {
+    ...editor,
+    selectedObject: null,
+  };
   if (typeof editor.selectedObject == typeof art) {
-    editor.canvas = selectedObject.image;
-    editor.selectedObject = null;
+    selectedObject = <Art>selectedObject;
+    newEditor.canvas = copyImageData(selectedObject.image);
   }
-  return editor;
+  return newEditor;
 }
 
 function replaceSelectedObject(
   history: ImageHistory,
   editor: Editor,
   newSelectedObject: TextObject | Triangle | Rectangle | Circle | Art
-): void {
+) {
+  let newEditor: Editor = {
+    ...editor,
+    selectedObject: newSelectedObject,
+  };
   if (editor.selectedObject != null) {
-    drawObject(editor, editor.selectedObject);
+    newEditor = drawObject(editor, copySelectedObject(editor.selectedObject));
   }
   if (newSelectedObject != null) {
-    history.history.push(editor.canvas);
+    history.history.push(copyImageData(editor.canvas));
     history.currentHistoryPosition++;
   }
-  editor.selectedObject = newSelectedObject;
+
+  return newEditor;
 }
 
 function drawObject(
@@ -177,29 +215,31 @@ function drawObject(
   var canvas = document.createElement("canvas");
   canvas.width = editor.canvas.width;
   canvas.height = editor.canvas.height;
-  var ctx = canvas.getContext("2d");
-  ctx.putImageData(editor.canvas, 0, 0);
+  let newImageData: ImageData;
 
   switch (typeof selectedObject) {
     case typeof triangle:
-      editor.canvas.data.set(
-        drawTriangle(canvas, <Triangle>selectedObject).data
-      );
+      newImageData = drawTriangle(canvas, <Triangle>selectedObject);
       break;
     case typeof rectangle:
-      editor.canvas.data.set(
-        drawRectangle(canvas, <Rectangle>selectedObject).data
-      );
+      newImageData = drawRectangle(canvas, <Rectangle>selectedObject);
       break;
     case typeof circle:
-      editor.canvas.data.set(drawCircle(canvas, <Circle>selectedObject).data);
+      newImageData = drawCircle(canvas, <Circle>selectedObject);
       break;
     case typeof art:
-      drawArt(editor.canvas, <Art>selectedObject);
+      newImageData = new ImageData(editor.canvas.width, editor.canvas.height);
+      drawArt(newImageData, <Art>selectedObject);
       break;
     case typeof textObject:
+      newImageData = drawText(canvas, <TextObject>selectedObject);
       break;
   }
+  const newEditor: Editor = {
+    ...editor,
+    canvas: newImageData,
+  };
+  return newEditor;
 }
 
 function drawRectangle(
@@ -238,7 +278,7 @@ function drawRectangle(
   ctx.lineTo(rectangle.position.x, rectangle.position.y + rectangle.size.y);
   ctx.fillStyle = rectangle.fillColor;
   ctx.fill();
-  return ctx.getImageData(0, 0, canvas.width, canvas.height);
+  return;
 }
 
 function drawTriangle(canvas: HTMLCanvasElement, triangle: Triangle) {
@@ -300,16 +340,18 @@ function drawCircle(canvas: HTMLCanvasElement, circle: Circle) {
 }
 
 function drawArt(canvas: ImageData, art: Art) {
+  const newImageData = new ImageData(canvas.width, canvas.height);
   for (var i = 0; i < art.size.x; i++) {
     for (var j = 0; i < art.size.y; j++) {
       var dstIndex = (i * art.size.x + j) * 4;
       var srcIndex =
         ((i + art.position.y) * art.image.width + j + art.position.x) * 4;
       for (var k = 0; k < 4; k++) {
-        canvas.data[srcIndex + k] = art.image.data[dstIndex + k];
+        newImageData.data[srcIndex + k] = art.image.data[dstIndex + k];
       }
     }
   }
+  return newImageData;
 }
 
 function drawText(canvas: HTMLCanvasElement, text: TextObject) {
@@ -320,37 +362,58 @@ function drawText(canvas: HTMLCanvasElement, text: TextObject) {
   return ctx.getImageData(0, 0, canvas.width, canvas.height);
 }
 
-function applyFilter(editor: Editor, filter: string) {
-  let filterCopy: String = filter;
-  if (filterCopy.length > 0 && filterCopy.charAt(0) == "#") {
-    filterCopy = filterCopy.substring(1);
+function applyFilter(editor: Editor, filter: Filter) {
+  const newImageData = new ImageData(editor.canvas.width, editor.canvas.height);
+  switch (filter) {
+    case Filter.Red | Filter.Green | Filter.Blue:
+      applyColorLevelFilter(editor.canvas, newImageData, [1, 0, 0, 1]);
+      break;
+    case Filter.Green:
+      applyColorLevelFilter(editor.canvas, newImageData, [0, 1, 0, 1]);
+      break
+    case Filter.Blue:
+      applyColorLevelFilter(editor.canvas, newImageData, [0, 0, 1, 1]);
+      break
+    case Filter.Grey:
+      applyGreyFilter(editor.canvas, newImageData);
+      break;
   }
-  if (filterCopy.length == 6) {
-    filterCopy = "FF" + filterCopy;
-  }
-  if (filterCopy.length != 8) {
-    throw new ReferenceError(
-      `Incorrect format of 'filter' parameter: ${filter}`
-    );
-  }
-  var colorLevels = [
-    parseInt(filterCopy.substring(0, 2), 16) / 255,
-    parseInt(filterCopy.substring(2, 4), 16) / 255,
-    parseInt(filterCopy.substring(4, 6), 16) / 255,
-    parseInt(filterCopy.substring(6, 8), 16) / 255,
-  ]; // RGBA
-  for (var i = 0; i < editor.canvas.height; i++) {
-    for (var j = 0; i < editor.canvas.width; j++) {
-      var dataIndex = (i * editor.canvas.width + j) * 4;
+
+  const newEditor: Editor = {
+    ...editor,
+    canvas: newImageData,
+  };
+  return newEditor;
+}
+
+function applyColorLevelFilter(src: ImageData, dst: ImageData, colorLevels: Array<number>) {
+  for (var i = 0; i < dst.height; i++) {
+    for (var j = 0; i < dst.width; j++) {
+      var dataIndex = (i * dst.width + j) * 4;
       for (var k = 0; k < 4; k++) {
-        editor.canvas.data[dataIndex + k] *= colorLevels[k];
+        dst[dataIndex + k] =
+          src.data[dataIndex + k] * colorLevels[k];
       }
     }
   }
-  return editor;
+}
+
+function applyGreyFilter(src: ImageData, dst: ImageData) {
+  for (var i = 0; i < dst.height; i++) {
+    for (var j = 0; i < dst.width; j++) {
+      var dataIndex = (i * dst.width + j) * 4;
+      var mean = (src.data[dataIndex] + src.data[dataIndex + 1] + src.data[dataIndex + 2]) / 3;
+      for (var k = 0; k < 3; k++) {
+        dst.data[dataIndex + k] = mean;
+      }
+    }
+  }
 }
 
 function importObject(editor: Editor) {
+  const newEditor: Editor = {
+    ...editor,
+  };
   document.querySelector("input").onchange = function (e: Event) {
     var inputElement = <HTMLInputElement>e.target;
     var file = inputElement.files[0],
@@ -364,50 +427,74 @@ function importObject(editor: Editor) {
       canvas.height = img.height;
       var ctx = canvas.getContext("2d");
       ctx.drawImage(img, 0, 0);
-      editor.canvas = ctx.getImageData(0, 0, img.width, img.height);
+      newEditor.canvas = ctx.getImageData(0, 0, img.width, img.height);
     };
     img.src = url;
   };
-  return editor;
+
+  return newEditor;
 }
 
-function exportObject(editor: Editor, path: string) {
+function exportObject(editor: Editor) {
   var canvas = document.createElement("canvas");
   canvas.width = editor.canvas.width;
   canvas.height = editor.canvas.height;
   var ctx = canvas.getContext("2d");
   ctx.putImageData(editor.canvas, 0, 0);
-
-  var img = canvas.toDataURL(path);
-  document.write('<img src="' + img + '"/>');
+  canvas.toBlob(
+    function (blob) {
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement("a");
+      link.setAttribute("download", url);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    },
+    "image/jpeg",
+    0.9
+  );
+  const newEditor: Editor = {
+    ...editor,
+  };
+  return newEditor;
 }
 
 function undo(history: ImageHistory, editor: Editor) {
+  const newEditor: Editor = {
+    ...editor,
+  };
   if (history.history.length > 0) {
     if (history.currentHistoryPosition > 0) {
       replaceSelectedObject(history, editor, null);
       history.currentHistoryPosition--;
-      editor.canvas = history.history[history.currentHistoryPosition];
+      newEditor.canvas = copyImageData(
+        history.history[history.currentHistoryPosition]
+      );
     }
   }
   return editor;
 }
 
 function redo(history: ImageHistory, editor: Editor) {
+  const newEditor: Editor = {
+    ...editor,
+  };
   if (history.history.length > 0) {
     if (history.currentHistoryPosition < history.history.length - 1) {
       history.currentHistoryPosition++;
-      editor.canvas = history.history[history.currentHistoryPosition];
+      newEditor.canvas = copyImageData(
+        history.history[history.currentHistoryPosition]
+      );
     }
   }
-  return editor;
+  return newEditor;
 }
 
 export {
   createNewCanvas,
   editCanvasSize,
   selectArea,
-  moveSelectedArea,
+  moveSelectedObject,
   cutSelectedArea,
   replaceSelectedObject,
   drawObject,
