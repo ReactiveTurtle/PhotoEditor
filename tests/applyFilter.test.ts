@@ -4,7 +4,7 @@ import { Editor, Filter, ImageHistory, applyFilter } from "../ts/index";
 import { equalsCanvasData } from "../tests/helper";
 
 function checkGreyFilter(first: ImageData, second: ImageData) {
-    if (second.data.length == first.data.length) {
+    if (second.data.length != first.data.length) {
         return false;
     }
     for (let i = 0; i < first.height; i++) {
@@ -44,11 +44,11 @@ test('test_applyFilter_Grey', () => {
     const dstEditor = applyFilter(editor, Filter.Grey);
     expect(dstEditor.canvas.width).toEqual(srcImageData.width);
     expect(dstEditor.canvas.height).toEqual(srcImageData.height);
-    checkGreyFilter(srcImageData, dstEditor.canvas);
+    expect(checkGreyFilter(srcImageData, dstEditor.canvas)).toBeTruthy();
 });
 
 function checkLevelFilter(first: ImageData, second: ImageData, levels: Array<number>) {
-    if (second.data.length == first.data.length) {
+    if (second.data.length != first.data.length) {
         return false;
     }
     for (let i = 0; i < first.height; i++) {
@@ -87,5 +87,5 @@ test('test_applyFilter_Level', () => {
     const dstEditor = applyFilter(editor, Filter.Red);
     expect(dstEditor.canvas.width).toEqual(srcImageData.width);
     expect(dstEditor.canvas.height).toEqual(srcImageData.height);
-    checkLevelFilter(srcImageData, dstEditor.canvas, [1, 0, 0, 1]);
+    expect(checkLevelFilter(srcImageData, dstEditor.canvas, [1, 0, 0, 1])).toBeTruthy();
 });

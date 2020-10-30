@@ -17,6 +17,7 @@ test('test_createNewCanvas', () => {
     expectedData.fill(255);
 
     const dstEditor = createNewCanvas(editor, expectedSize);
+
     expect(dstEditor.canvas.width).toEqual(expectedSize.x);
     expect(dstEditor.canvas.width).toEqual(expectedSize.y);
     expect(equalsCanvasData(dstEditor.canvas.data, expectedData)).toBeTruthy();

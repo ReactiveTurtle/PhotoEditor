@@ -364,7 +364,7 @@ function drawText(canvas: HTMLCanvasElement, text: TextObject) {
 function applyFilter(editor: Editor, filter: Filter) {
 	const newImageData = new ImageData(editor.canvas.width, editor.canvas.height);
 	switch (filter) {
-		case Filter.Red | Filter.Green | Filter.Blue:
+		case Filter.Red:
 			applyColorLevelFilter(editor.canvas, newImageData, [1, 0, 0, 1]);
 			break;
 		case Filter.Green:
@@ -390,8 +390,7 @@ function applyColorLevelFilter(src: ImageData, dst: ImageData, colorLevels: Arra
 		for (var j = 0; j < dst.width; j++) {
 			var dataIndex = (i * dst.width + j) * 4;
 			for (var k = 0; k < 4; k++) {
-				dst[dataIndex + k] =
-					src.data[dataIndex + k] * colorLevels[k];
+				dst.data[dataIndex + k] = src.data[dataIndex + k] * colorLevels[k];
 			}
 		}
 	}
