@@ -1,0 +1,17 @@
+.App {
+  text-align: center;
+  display: flex;
+  align-items: flex-start;
+  margin-top: auto;
+}
+
+.App-header {
+  display: flex;
+  user-select: none;
+  font: 14px cursive;
+  margin: 16px 0 0 20px;
+}
+
+.App-scrollContent {
+  width: 100%;
+}

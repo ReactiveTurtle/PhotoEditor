@@ -1,22 +1,43 @@
 {
-  "devDependencies": {
-    "@types/jest": "^26.0.14",
-    "eslint": "^7.11.0",
-    "jest": "^26.5.3",
-    "ts-jest": "^26.4.1"
-  },
-  "name": "ReactivePhotoEditor",
-  "version": "1.0.0",
-  "main": "index.html",
-  "repository": "https://github.com/ReactiveTurtle/PhotoEditor.git",
-  "author": "ReactiveTurtle <aktuganovqwerty@gmail.com>",
-  "license": "MIT",
+  "name": "photo-editor",
+  "version": "0.1.0",
+  "private": true,
   "dependencies": {
-    "@canvas/image-data": "^1.0.0",
-    "canvas": "^2.6.1",
-    "jsdom": "^16.4.0",
-    "pixelworks": "^1.1.0",
-    "react": "^16.14.0",
-    "typescript": "^4.0.3"
+    "@testing-library/jest-dom": "^5.11.4",
+    "@testing-library/react": "^11.1.0",
+    "@testing-library/user-event": "^12.1.10",
+    "@types/jest": "^26.0.15",
+    "@types/node": "^12.0.0",
+    "@types/react": "^16.9.53",
+    "@types/react-dom": "^16.9.8",
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1",
+    "react-scripts": "4.0.0",
+    "typescript": "^4.0.3",
+    "web-vitals": "^0.2.4"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }

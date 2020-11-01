@@ -1,0 +1,27 @@
+.Button {
+    display: flex;
+    cursor: pointer;
+    align-items: center;
+    background: #E0E0E0;
+    color: black;
+    padding: 12px 18px;
+    border-width: 1px;
+    border-color: #CCC;
+    margin: 4px 0 2px 4px;
+    width: fit-content;
+    height: fit-content;
+    border-radius: 8px;
+    z-index: 2;
+}
+
+.Button:hover {
+    background: #CCC;
+}
+
+.Button:first-child {
+    margin-left: 0;
+}
+
+.Button:active {
+    background: #bcbcbc
+}
