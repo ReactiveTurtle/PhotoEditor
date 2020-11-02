@@ -4,6 +4,7 @@ import './SelectSizePopup.css';
 import { setEditor, getEditor, render, setSizePopupVisibility } from '../statemanager/StateManager';
 import { createNewCanvas } from '../helpers/CanvasHelper';
 import { Vector2 } from '../structures/Vector2';
+import EditText from '../edittext/EditText';
 
 function close() {
     setSizePopupVisibility(false);
@@ -21,25 +22,17 @@ export default function SelectSizePopup() {
             onClick={() => close()}>
             <div className="SelectSizePopup"
                 onClick={(e) => e.stopPropagation()}>
-                <p className="SelectSizePopup-title">Введите размер полотна</p>
-                <div className="SelectSizePopup-input">
-                    <input className="Number-input" id="newWidth"
-                        type="number"
-                        min="1"
-                        defaultValue={mSizePopupTemp.x}
-                        placeholder="Введите число"
-                        onChange={(e) => mSizePopupTemp.x = parseInt(e.target.value)}></input>
-                    <label className="Number-label" htmlFor="newWidth">Ширина</label>
-                </div>
-                <div className="SelectSizePopup-input">
-                    <input className="Number-input" id="newHeight"
-                        type="number"
-                        min="1"
-                        defaultValue={mSizePopupTemp.y}
-                        placeholder="Введите число"
-                        onChange={(e) => mSizePopupTemp.y = parseInt(e.target.value)}></input>
-                    <label className="Number-label" htmlFor="newHeight">Высота</label>
-                </div>
+                <p className="SelectSizePopup-title">Введите размер холста</p>
+                <EditText title="Ширина"
+                    onChange={(e) => mSizePopupTemp.x = parseInt(e.target.value)}
+                    text={mSizePopupTemp.x + ""}
+                    type="number"
+                    hintText="Введите число"></EditText>
+                <EditText title="Высота"
+                    onChange={(e) => mSizePopupTemp.y = parseInt(e.target.value)}
+                    text={mSizePopupTemp.y + ""}
+                    type="number"
+                    hintText="Введите число"></EditText>
                 <div className="SelectSizePopup-buttonWrapper">
                     <Button text="Создать" onClick={() => {
                         setEditor(createNewCanvas(getEditor(), mSizePopupTemp));

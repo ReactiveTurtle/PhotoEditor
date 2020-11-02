@@ -33,31 +33,6 @@
     margin-top: 16px;
 }
 
-.SelectSizePopup-input {
-    text-align: start;
-    position: relative;
-    display: flex;
-    margin: 0 0 8px 0;
-}
-
-.Number-label {
-    font: 600 14px cursive;
-    position: absolute;
-    margin-left: 12px;
-    background-color: white;
-    padding: 0 4px 0 4px;
-    color: #aa00ff;
-}
-
-.Number-input {
-    padding: 16px;
-    font-size: 16px;
-    border: 2px solid #aa00ff;
-    border-radius: 16px;
-    outline: none;
-    margin: 10px 0 0 0;
-}
-
 label {
     position: absolute;
     top: 0;

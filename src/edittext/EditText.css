@@ -1,0 +1,25 @@
+.EditText-input {
+    text-align: start;
+    position: relative;
+    margin: 0 0 8px 0;
+}
+
+.Number-label {
+    position: absolute;
+    margin-left: 12px;
+    font: 600 14px cursive;
+    background-color: white;
+    padding: 0 4px 0 4px;
+    color: #aa00ff;
+    left: 0;
+}
+
+.Number-input {
+    padding: 12px;
+    font: 600 14px cursive;
+    border: 2px solid #aa00ff;
+    border-radius: 16px;
+    outline: none;
+    margin: 10px 0 0 0;
+    min-width: 128px;
+}

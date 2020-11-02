@@ -7,5 +7,6 @@ export type Circle = {
 	strokeColor: string;
 	strokeWidth: number;
 	radius: number;
+	size: Vector2;
 	position: Vector2;
 };

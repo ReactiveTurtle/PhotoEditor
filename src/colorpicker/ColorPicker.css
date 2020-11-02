@@ -1,17 +1,10 @@
 .ColorPicker {
     display: flex;
     position: fixed;
-    width: 512px;
-    height: 256px;
     margin: 0 0 8px 8px;
     background: #E0E0E0;
     align-content: center;
     bottom: 0;
-}
-
-.ColorPicker-gradient {
-    width: 310px;
-    height: 192px;
-    margin: auto 16px auto auto;
-    background: linear-gradient(90deg, #F00 0%, #FF0 20%, #0F0 40%, #0FF 60%, #00F 80%, #F00 100%);
+    padding: 16px;
+    min-width: 100px;
 }

@@ -3,6 +3,13 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import '../index.css';
 import App from '../App';
+import { TextObject } from '../structures/TextObject';
+import { Circle } from '../structures/Circle';
+import { Art } from '../structures/Art';
+import { drawObject } from '../helpers/DrawHelper';
+import { ToolType } from '../tool/Tools';
+import { Polygon } from '../structures/Polygon';
+
 let mEditor: Editor = {
     imageHistory: {
         history: [],
@@ -14,7 +21,7 @@ let mEditor: Editor = {
 
 export function setEditor(editor: Editor): void {
     mEditor = editor;
-    render();
+    console.log(mEditor.imageHistory.history.length);
 }
 
 function copyImageData(imageData: ImageData) {
@@ -32,9 +39,35 @@ export function getEditor(): Editor {
             history: [],
             currentHistoryPosition: 0
         },
-        selectedObject: null,
+        selectedObject: mEditor.selectedObject,
         canvas: copyImageData(mEditor.canvas),
     };
+}
+
+export function replaceSelectedObject(
+    newSelectedObject: TextObject | Polygon | Circle | Art | null
+) {
+    let newEditor: Editor = {
+        ...mEditor,
+        selectedObject: newSelectedObject,
+    };
+    if (mEditor.selectedObject != null) {
+        const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+        if (canvas != null) {
+            const ctx = canvas.getContext("2d");
+            if (ctx != null) {
+                ctx.putImageData(mEditor.canvas, 0, 0);
+                newEditor.canvas = drawObject(ctx,
+                    { x: mEditor.canvas.width, y: mEditor.canvas.height },
+                    mEditor.selectedObject);
+            }
+        }
+    }
+    if (newSelectedObject != null) {
+        newEditor.imageHistory.history.push(copyImageData(mEditor.canvas));
+        newEditor.imageHistory.currentHistoryPosition++;
+    }
+    setEditor(newEditor);
 }
 
 export function render() {
@@ -44,7 +77,16 @@ export function render() {
         </React.StrictMode>,
         document.getElementById('root')
     );
+}
 
+let mCurrentTool: ToolType = ToolType.Rectangle;
+export function setCurrentTool(tool: ToolType) {
+    mCurrentTool = tool;
+    render();
+}
+
+export function getCurrentTool(): ToolType {
+    return mCurrentTool;
 }
 
 let mIsSizePopupVisible = false;
