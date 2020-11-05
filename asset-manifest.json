@@ -1,8 +1,8 @@
 {
   "files": {
     "main.css": "/PhotoEditor/static/css/main.2c754f82.chunk.css",
-    "main.js": "/PhotoEditor/static/js/main.edcdf0a6.chunk.js",
-    "main.js.map": "/PhotoEditor/static/js/main.edcdf0a6.chunk.js.map",
+    "main.js": "/PhotoEditor/static/js/main.d9918733.chunk.js",
+    "main.js.map": "/PhotoEditor/static/js/main.d9918733.chunk.js.map",
     "runtime-main.js": "/PhotoEditor/static/js/runtime-main.ec88fa48.js",
     "runtime-main.js.map": "/PhotoEditor/static/js/runtime-main.ec88fa48.js.map",
     "static/js/2.697e8160.chunk.js": "/PhotoEditor/static/js/2.697e8160.chunk.js",
@@ -17,6 +17,6 @@
     "static/js/runtime-main.ec88fa48.js",
     "static/js/2.697e8160.chunk.js",
     "static/css/main.2c754f82.chunk.css",
-    "static/js/main.edcdf0a6.chunk.js"
+    "static/js/main.d9918733.chunk.js"
   ]
 }
