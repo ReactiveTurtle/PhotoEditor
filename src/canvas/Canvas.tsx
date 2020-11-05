@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { drawObject } from '../helpers/DrawHelper';
-import { getEditor, pushHistory, replaceSelectedObject, setEditor } from '../model/StateManager';
+import { drawObject } from '../helper/DrawHelper';
+import { getEditor, pushHistory, replaceSelectedObject, setEditor } from '../statemanager/StateManager';
 import { Polygon } from '../structures/Polygon';
 import './Canvas.css';
 import { Types } from '../structures/Type';

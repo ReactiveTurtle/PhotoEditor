@@ -1,6 +1,6 @@
 import React from 'react';
 import EditText from '../edittext/EditText';
-import { getEditor, render, replaceSelectedObject, setEditor } from '../model/StateManager';
+import { getEditor, render, replaceSelectedObject, setEditor } from '../statemanager/StateManager';
 import { Circle } from '../structures/Circle';
 import { Polygon } from '../structures/Polygon';
 import { Types } from '../structures/Type';

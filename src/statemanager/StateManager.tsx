@@ -6,7 +6,7 @@ import App from '../App';
 import { TextObject } from '../structures/TextObject';
 import { Circle } from '../structures/Circle';
 import { Art } from '../structures/Art';
-import { drawObject } from '../helpers/DrawHelper';
+import { drawObject } from '../helper/DrawHelper';
 import { Polygon } from '../structures/Polygon';
 import { renderCanvas } from '../canvas/Canvas';
 import { ImageHistory } from '../structures/ImageHistory';

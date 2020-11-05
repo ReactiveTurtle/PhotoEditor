@@ -4,10 +4,10 @@ import SelectSizePopup from './selectsizepopup/SelectSizePopup';
 import Button from './button/Button';
 import Canvas from './canvas/Canvas';
 import ColorPicker from './colorpicker/ColorPicker';
-import { exportObject } from './helpers/CanvasHelper';
+import { exportObject } from './helper/CanvasHelper';
 import './structures/Vector2';
 import Tools, { ToolType } from './tool/Tools';
-import { redo, setEditor, undo } from './model/StateManager';
+import { redo, setEditor, undo } from './statemanager/StateManager';
 
 function App() {
     const [currentTool, setCurrentTool] = useState(ToolType.Rectangle);

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Button from '../button/Button';
-import { render } from '../model/StateManager';
+import { render } from '../statemanager/StateManager';
 import './Tools.css';
 
 export enum ToolType {

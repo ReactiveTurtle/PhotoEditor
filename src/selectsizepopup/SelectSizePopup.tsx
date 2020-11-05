@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import Button from '../button/Button';
 import './SelectSizePopup.css';
 import '../index.css';
-import { setEditor, getEditor } from '../model/StateManager';
-import { createNewCanvas } from '../helpers/CanvasHelper';
+import { setEditor, getEditor } from '../statemanager/StateManager';
+import { createNewCanvas } from '../helper/CanvasHelper';
 import { Vector2 } from '../structures/Vector2';
 import EditText from '../edittext/EditText';
 

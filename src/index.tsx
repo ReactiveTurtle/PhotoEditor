@@ -1,6 +1,6 @@
-import { getEditor, pushHistory, render, setEditor } from './model/StateManager'
+import { getEditor, pushHistory, render, setEditor } from './statemanager/StateManager'
 import reportWebVitals from './reportWebVitals';
-import { createNewCanvas } from './helpers/CanvasHelper';
+import { createNewCanvas } from './helper/CanvasHelper';
 
 setEditor(createNewCanvas(getEditor(), { x: 400, y: 600 }));
 pushHistory(getEditor().canvas);
