@@ -1,28 +1,39 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Button from '../button/Button';
-import { getCurrentTool, setCurrentTool } from '../statemanager/StateManager';
+import { render } from '../model/StateManager';
 import './Tools.css';
 
 export enum ToolType {
     Rectangle = 0, Triangle = 1, Circle = 2, Text = 3
 }
 
-export default function Tools() {
-    const currentTool = getCurrentTool();
+interface ToolsProps {
+    onSelected(tool: ToolType): void
+}
+
+export default function Tools({ onSelected }: ToolsProps) {
+    const [currentTool, setCurrentTool] = useState(ToolType.Rectangle);
+    useEffect(() => {
+        onSelected(currentTool);
+    }, [onSelected, currentTool])
+    const onClick = (tool: ToolType) => {
+        setCurrentTool(tool);
+        render();
+    };
     return (
         <div className="Tools-container">
             <Button text="Прямоугольник"
                 class={currentTool === ToolType.Rectangle ? "Tools-selected" : "Tools-default"}
-                onClick={() => setCurrentTool(ToolType.Rectangle)}></Button>
+                onClick={() => onClick(ToolType.Rectangle)}></Button>
             <Button text="Треугольник"
                 class={currentTool === ToolType.Triangle ? "Tools-selected" : "Tools-default"}
-                onClick={() => setCurrentTool(ToolType.Triangle)}></Button>
+                onClick={() => onClick(ToolType.Triangle)}></Button>
             <Button text="Круг"
                 class={currentTool === ToolType.Circle ? "Tools-selected" : "Tools-default"}
-                onClick={() => setCurrentTool(ToolType.Circle)}></Button>
+                onClick={() => onClick(ToolType.Circle)}></Button>
             <Button text="Текст"
                 class={currentTool === ToolType.Text ? "Tools-selected" : "Tools-default"}
-                onClick={() => setCurrentTool(ToolType.Text)}></Button>
+                onClick={() => onClick(ToolType.Text)}></Button>
         </div>
     );
 }

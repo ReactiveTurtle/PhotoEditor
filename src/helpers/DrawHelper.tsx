@@ -81,9 +81,11 @@ function drawCircle(ctx: CanvasRenderingContext2D,
     size: Vector2,
     circle: Circle) {
     let strokeWidth = circle.strokeWidth / 2;
+    ctx.lineWidth = circle.strokeWidth;
+    ctx.beginPath();
     ctx.arc(
-        circle.position.x,
-        circle.position.y,
+        circle.position.x + circle.radius,
+        circle.position.y + circle.radius,
         circle.radius + strokeWidth,
         0,
         2 * Math.PI,
@@ -92,9 +94,10 @@ function drawCircle(ctx: CanvasRenderingContext2D,
     ctx.strokeStyle = circle.strokeColor;
     ctx.stroke();
 
+    ctx.beginPath();
     ctx.arc(
-        circle.position.x,
-        circle.position.y,
+        circle.position.x + circle.radius,
+        circle.position.y + circle.radius,
         circle.radius,
         0,
         2 * Math.PI,

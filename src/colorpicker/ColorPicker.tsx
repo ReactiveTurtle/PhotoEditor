@@ -1,6 +1,6 @@
 import React from 'react';
 import EditText from '../edittext/EditText';
-import { getEditor, render, replaceSelectedObject } from '../statemanager/StateManager';
+import { getEditor, render, replaceSelectedObject, setEditor } from '../model/StateManager';
 import { Circle } from '../structures/Circle';
 import { Polygon } from '../structures/Polygon';
 import { Types } from '../structures/Type';
@@ -24,9 +24,13 @@ function ColorPicker() {
                                 || selectedObject.type === Types.Circle) {
                                 const objRTC: Polygon | Circle = selectedObject;
                                 objRTC.fillColor = input.value;
+                                editor.selectedObject = null;
+
+                                setEditor(editor);
                                 replaceSelectedObject(objRTC);
+
                                 input.onchange = null;
-                                requestAnimationFrame(render);
+                                render();
                             }
                         }
                     }}></EditText>
@@ -44,6 +48,10 @@ function ColorPicker() {
                                 || selectedObject.type === Types.Circle) {
                                 const objRTC: Polygon | Circle = selectedObject;
                                 objRTC.strokeColor = input.value;
+
+                                editor.selectedObject = null;
+                                setEditor(editor);
+                                
                                 replaceSelectedObject(objRTC);
                                 input.onchange = null;
                                 render();
