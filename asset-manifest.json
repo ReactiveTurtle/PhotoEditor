@@ -1,0 +1,22 @@
+{
+  "files": {
+    "main.css": "/PhotoEditor/static/css/main.2c754f82.chunk.css",
+    "main.js": "/PhotoEditor/static/js/main.edcdf0a6.chunk.js",
+    "main.js.map": "/PhotoEditor/static/js/main.edcdf0a6.chunk.js.map",
+    "runtime-main.js": "/PhotoEditor/static/js/runtime-main.ec88fa48.js",
+    "runtime-main.js.map": "/PhotoEditor/static/js/runtime-main.ec88fa48.js.map",
+    "static/js/2.697e8160.chunk.js": "/PhotoEditor/static/js/2.697e8160.chunk.js",
+    "static/js/2.697e8160.chunk.js.map": "/PhotoEditor/static/js/2.697e8160.chunk.js.map",
+    "static/js/3.d5a6d252.chunk.js": "/PhotoEditor/static/js/3.d5a6d252.chunk.js",
+    "static/js/3.d5a6d252.chunk.js.map": "/PhotoEditor/static/js/3.d5a6d252.chunk.js.map",
+    "index.html": "/PhotoEditor/index.html",
+    "static/css/main.2c754f82.chunk.css.map": "/PhotoEditor/static/css/main.2c754f82.chunk.css.map",
+    "static/js/2.697e8160.chunk.js.LICENSE.txt": "/PhotoEditor/static/js/2.697e8160.chunk.js.LICENSE.txt"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.ec88fa48.js",
+    "static/js/2.697e8160.chunk.js",
+    "static/css/main.2c754f82.chunk.css",
+    "static/js/main.edcdf0a6.chunk.js"
+  ]
+}
