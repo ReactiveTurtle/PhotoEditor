@@ -27,7 +27,7 @@ function ColorPicker() {
                                 editor.selectedObject = null;
 
                                 setEditor(editor);
-                                replaceSelectedObject(objRTC);
+                                setEditor(replaceSelectedObject(objRTC));
 
                                 input.onchange = null;
                                 render();
@@ -52,7 +52,7 @@ function ColorPicker() {
                                 editor.selectedObject = null;
                                 setEditor(editor);
                                 
-                                replaceSelectedObject(objRTC);
+                                setEditor(replaceSelectedObject(objRTC));
                                 input.onchange = null;
                                 render();
                             }
