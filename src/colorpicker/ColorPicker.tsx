@@ -1,6 +1,7 @@
 import React from 'react';
 import EditText from '../edittext/EditText';
-import { getEditor, render, replaceSelectedObject, setEditor } from '../statemanager/StateManager';
+import { replaceSelectedObject } from '../helper/EditorHelper';
+import { dispatch, getEditor, render, setEditor } from '../statemanager/StateManager';
 import { Circle } from '../structures/Circle';
 import { Polygon } from '../structures/Polygon';
 import { Types } from '../structures/Type';
@@ -27,7 +28,7 @@ function ColorPicker() {
                                 editor.selectedObject = null;
 
                                 setEditor(editor);
-                                setEditor(replaceSelectedObject(objRTC));
+                                dispatch(replaceSelectedObject, objRTC);
 
                                 input.onchange = null;
                                 render();
@@ -52,7 +53,7 @@ function ColorPicker() {
                                 editor.selectedObject = null;
                                 setEditor(editor);
                                 
-                                setEditor(replaceSelectedObject(objRTC));
+                                dispatch(replaceSelectedObject, objRTC);
                                 input.onchange = null;
                                 render();
                             }

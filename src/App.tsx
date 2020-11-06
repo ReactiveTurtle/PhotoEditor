@@ -8,8 +8,13 @@ import { exportObject } from './helper/CanvasHelper';
 import './structures/Vector2';
 import Tools, { ToolType } from './tool/Tools';
 import { redo, setEditor, undo } from './statemanager/StateManager';
+import { Editor } from './structures/Editor';
 
-function App() {
+interface AppProps {
+    editor: Editor
+}
+
+function App({ editor }: AppProps) {
     const [currentTool, setCurrentTool] = useState(ToolType.Rectangle);
     useEffect(() => {
         const listener = (e: KeyboardEvent) => {
@@ -30,7 +35,9 @@ function App() {
     return (
         <div className="App"
             id="App">
-            <Canvas tool={currentTool}></Canvas>
+            <Canvas tool={currentTool}
+                imageData={editor.canvas}
+                selectedObject={editor.selectedObject}></Canvas>
             <div className="App-scrollContent">
                 <header className="App-header">
                     <Button text="Создать" onClick={() => {
@@ -38,7 +45,6 @@ function App() {
                         if (popup == null) {
                             return;
                         }
-                        console.log("click");
                         popup.classList.remove("hidden");
                     }}></Button>
                     <Button text="Импорт" onClick={() => { }}></Button>

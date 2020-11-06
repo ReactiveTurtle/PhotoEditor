@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { drawObject } from '../helper/DrawHelper';
-import { getEditor, pushHistory, replaceSelectedObject, setEditor } from '../statemanager/StateManager';
+import { dispatch, getEditor, setEditor } from '../statemanager/StateManager';
 import { Polygon } from '../structures/Polygon';
 import './Canvas.css';
 import { Types } from '../structures/Type';
@@ -10,21 +10,22 @@ import { ToolType } from '../tool/Tools';
 import { Circle } from '../structures/Circle';
 import { Art } from '../structures/Art';
 import { TextObject } from '../structures/TextObject';
-import { Editor } from '../structures/Editor';
+import { replaceSelectedObject } from '../helper/EditorHelper';
 
 interface CanvasProps {
-    tool: ToolType
+    tool: ToolType,
+    selectedObject: TextObject | Polygon | Circle | Art | null,
+    imageData: ImageData,
 }
 
-function Canvas({ tool }: CanvasProps) {
+function Canvas({ tool, selectedObject, imageData }: CanvasProps) {
     const [isCanvasDown, setCanvasDown] = useState(false);
     const [tempObject, setTempObject] = useState<Polygon | Circle | TextObject | Art | null>(null);
     const [start, setStart] = useState<Vector2>({ x: 0, y: 0 });
 
-    const editor = getEditor();
     useEffect(() => {
-        renderCanvas(getEditor(), tempObject);
-    }, [tempObject]);
+        renderCanvas(imageData, selectedObject, tempObject);
+    }, [imageData, selectedObject, tempObject]);
     const onCreateObject = (moveEnd: Vector2) => {
         if (isCanvasDown) {
             let newObject = null;
@@ -46,21 +47,20 @@ function Canvas({ tool }: CanvasProps) {
         <div className="Canvas-container">
             <canvas id="canvas"
                 className="Canvas"
-                width={editor.canvas.width}
-                height={editor.canvas.height}
+                width={imageData.width}
+                height={imageData.height}
                 onMouseDown={(e) => {
                     const canvas = e.target as HTMLCanvasElement;
                     if (canvas.style.cursor === "move") {
-                        if (editor.selectedObject != null) {
+                        if (selectedObject != null) {
                             setStart({
-                                x: e.clientX - canvas.offsetLeft - editor.selectedObject.position.x,
-                                y: e.clientY - canvas.offsetTop - editor.selectedObject.position.y
+                                x: e.clientX - canvas.offsetLeft - selectedObject.position.x,
+                                y: e.clientY - canvas.offsetTop - selectedObject.position.y
                             });
                         }
                     } else {
                         if (getEditor().selectedObject != null) {
-                            setEditor(replaceSelectedObject(null));
-                            pushHistory(getEditor().canvas);
+                            dispatch(replaceSelectedObject, null);
                         }
                         setStart({
                             x: e.clientX - canvas.offsetLeft,
@@ -78,8 +78,8 @@ function Canvas({ tool }: CanvasProps) {
                     if (isCanvasDown) {
                         if (canvas.style.cursor === "move") {
                             const editor = getEditor();
-                            if (editor.selectedObject != null) {
-                                editor.selectedObject.position = {
+                            if (selectedObject != null) {
+                                selectedObject.position = {
                                     x: moveEnd.x - start.x,
                                     y: moveEnd.y - start.y
                                 }
@@ -89,7 +89,6 @@ function Canvas({ tool }: CanvasProps) {
                             onCreateObject(moveEnd);
                         }
                     } else {
-                        const selectedObject = getEditor().selectedObject;
                         if (selectedObject != null) {
                             const normY = Math.min(selectedObject.position.y + selectedObject.size.y, selectedObject.position.y);
                             if (moveEnd.x >= selectedObject.position.x
@@ -108,11 +107,10 @@ function Canvas({ tool }: CanvasProps) {
                 onMouseUp={(e) => {
                     const canvas = e.target as HTMLCanvasElement;
                     if (tempObject != null) {
-                        setEditor(replaceSelectedObject(tempObject));
+                        dispatch(replaceSelectedObject, tempObject, false);
                         setTempObject(null);
                     } else if (canvas.style.cursor === "default" && getEditor().selectedObject != null) {
-                        setEditor(replaceSelectedObject(tempObject));
-                        pushHistory(getEditor().canvas);
+                        dispatch(replaceSelectedObject, tempObject);
                     }
                     setCanvasDown(false);
                 }}>
@@ -121,20 +119,21 @@ function Canvas({ tool }: CanvasProps) {
     );
 }
 
-export function renderCanvas(editor: Editor = getEditor(), tempCanvasObject: Polygon | Circle | TextObject | Art | null = null) {
+function renderCanvas(imageData: ImageData, selectedObject: Polygon | Circle | TextObject | Art | null = null,
+    tempCanvasObject: Polygon | Circle | TextObject | Art | null = null) {
     const canvas = document.getElementById("canvas") as HTMLCanvasElement;
     if (canvas == null) {
         return;
     }
     const context = canvas.getContext("2d");
     if (context != null) {
-        context.putImageData(editor.canvas, 0, 0);
-        if (editor.selectedObject != null) {
-            context.putImageData(drawObject(context, { x: canvas.width, y: canvas.height }, editor.selectedObject), 0, 0);
-            drawBorder(editor.selectedObject.position, editor.selectedObject.size, context);
+        context.putImageData(imageData, 0, 0);
+        if (selectedObject != null) {
+            context.putImageData(drawObject(context, { x: imageData.width, y: imageData.height }, selectedObject), 0, 0);
+            drawBorder(selectedObject.position, selectedObject.size, context);
         }
         if (tempCanvasObject != null) {
-            context.putImageData(drawObject(context, { x: canvas.width, y: canvas.height }, tempCanvasObject), 0, 0);
+            context.putImageData(drawObject(context, { x: imageData.width, y: imageData.height }, tempCanvasObject), 0, 0);
         }
     }
 }

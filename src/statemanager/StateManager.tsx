@@ -3,28 +3,13 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import '../index.css';
 import App from '../App';
-import { TextObject } from '../structures/TextObject';
-import { Circle } from '../structures/Circle';
-import { Art } from '../structures/Art';
-import { drawObject } from '../helper/DrawHelper';
-import { Polygon } from '../structures/Polygon';
-import { renderCanvas } from '../canvas/Canvas';
 import { ImageHistory } from '../structures/ImageHistory';
+import { replaceSelectedObject } from '../helper/EditorHelper';
 
 const imageHistory: ImageHistory = {
     history: [],
     currentHistoryPosition: 0
 };
-
-export function pushHistory(canvas: ImageData) {
-    while (imageHistory.currentHistoryPosition < imageHistory.history.length - 1) {
-        imageHistory.history.pop();
-    }
-    if (imageHistory.currentHistoryPosition === imageHistory.history.length - 1) {
-        imageHistory.currentHistoryPosition++;
-    }
-    imageHistory.history.push(canvas);
-}
 
 let mEditor: Editor = {
     selectedObject: null,
@@ -35,7 +20,24 @@ let mEditor: Editor = {
 export function setEditor(editor: Editor): void {
     mEditor = editor;
     console.log(imageHistory.history.length + ", " + imageHistory.currentHistoryPosition);
-    renderCanvas();
+    render();
+}
+
+export function dispatch(fun: Function, param: any, isUpdateHistory: boolean = false) {
+    setEditor(fun(getEditor(), param) as Editor);
+    if (isUpdateHistory) {
+        pushHistory(copyImageData(mEditor.canvas));
+    }
+}
+
+function pushHistory(canvas: ImageData) {
+    while (imageHistory.currentHistoryPosition < imageHistory.history.length - 1) {
+        imageHistory.history.pop();
+    }
+    if (imageHistory.currentHistoryPosition === imageHistory.history.length - 1) {
+        imageHistory.currentHistoryPosition++;
+    }
+    imageHistory.history.push(canvas);
 }
 
 function copyImageData(imageData: ImageData) {
@@ -54,32 +56,10 @@ export function getEditor(): Editor {
     };
 }
 
-export function replaceSelectedObject(
-    newSelectedObject: TextObject | Polygon | Circle | Art | null
-) {
-    let newEditor: Editor = {
-        ...mEditor,
-        selectedObject: newSelectedObject,
-    };
-    if (mEditor.selectedObject != null) {
-        const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-        if (canvas != null) {
-            const ctx = canvas.getContext("2d");
-            if (ctx != null) {
-                ctx.putImageData(mEditor.canvas, 0, 0);
-                newEditor.canvas = drawObject(ctx,
-                    { x: mEditor.canvas.width, y: mEditor.canvas.height },
-                    mEditor.selectedObject);
-            }
-        }
-    }
-    return newEditor;
-}
-
 export function render() {
     ReactDOM.render(
         <React.StrictMode>
-            <App />
+            <App editor={getEditor()} />
         </React.StrictMode>,
         document.getElementById('root')
     );
@@ -92,10 +72,9 @@ export function undo() {
             if (mEditor.selectedObject == null) {
                 imageHistory.currentHistoryPosition--;
             } else {
-                const editor = replaceSelectedObject(null);
-                pushHistory(editor.canvas);
+                dispatch(replaceSelectedObject, null, true);
                 imageHistory.currentHistoryPosition--;
-                setEditor(editor);
+                setEditor(mEditor);
             }
             newCanvas = copyImageData(
                 imageHistory.history[imageHistory.currentHistoryPosition]
