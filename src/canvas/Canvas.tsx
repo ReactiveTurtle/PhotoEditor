@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { drawObject } from '../helper/DrawHelper';
-import { dispatch, getEditor, setEditor } from '../statemanager/StateManager';
+import { dispatch } from '../statemanager/StateManager';
 import { Polygon } from '../structures/Polygon';
 import './Canvas.css';
 import { Types } from '../structures/Type';
@@ -59,8 +59,8 @@ function Canvas({ tool, selectedObject, imageData }: CanvasProps) {
                             });
                         }
                     } else {
-                        if (getEditor().selectedObject != null) {
-                            dispatch(replaceSelectedObject, null);
+                        if (selectedObject != null) {
+                            dispatch(replaceSelectedObject, null, true);
                         }
                         setStart({
                             x: e.clientX - canvas.offsetLeft,
@@ -77,13 +77,12 @@ function Canvas({ tool, selectedObject, imageData }: CanvasProps) {
                     };
                     if (isCanvasDown) {
                         if (canvas.style.cursor === "move") {
-                            const editor = getEditor();
                             if (selectedObject != null) {
                                 selectedObject.position = {
                                     x: moveEnd.x - start.x,
                                     y: moveEnd.y - start.y
                                 }
-                                setEditor(editor);
+                                renderCanvas(imageData, selectedObject);
                             }
                         } else {
                             onCreateObject(moveEnd);
@@ -109,8 +108,8 @@ function Canvas({ tool, selectedObject, imageData }: CanvasProps) {
                     if (tempObject != null) {
                         dispatch(replaceSelectedObject, tempObject, false);
                         setTempObject(null);
-                    } else if (canvas.style.cursor === "default" && getEditor().selectedObject != null) {
-                        dispatch(replaceSelectedObject, tempObject);
+                    } else if (canvas.style.cursor === "default" && selectedObject != null) {
+                        dispatch(replaceSelectedObject, tempObject, true);
                     }
                     setCanvasDown(false);
                 }}>
@@ -139,9 +138,8 @@ function renderCanvas(imageData: ImageData, selectedObject: Polygon | Circle | T
 }
 
 function drawBorder(position: Vector2, size: Vector2, ctx: CanvasRenderingContext2D) {
-    ctx.setLineDash([15, 20]);
     ctx.beginPath();
-    ctx.lineWidth = 5;
+    ctx.lineWidth = 2;
     const normY = Math.min(position.y + size.y, position.y);
     ctx.moveTo(
         position.x - ctx.lineWidth,
@@ -159,9 +157,37 @@ function drawBorder(position: Vector2, size: Vector2, ctx: CanvasRenderingContex
         position.x - ctx.lineWidth,
         normY - ctx.lineWidth);
     ctx.lineWidth = 2;
-    ctx.strokeStyle = "#888";
+    ctx.strokeStyle = "#64dd17";
     ctx.stroke();
     ctx.setLineDash([]);
+
+
+    const radius = 8;
+
+    const positions = [
+        { x: position.x, y: position.y}, //Left Top
+        { x: position.x + size.x / 2, y: position.y}, // Top
+        { x: position.x + size.x, y: position.y}, // RIght Top
+        { x: position.x + size.x, y: position.y + size.y / 2}, // Right
+        { x: position.x + size.x, y: position.y + size.y}, // Right Bottom
+        { x: position.x + size.x / 2, y: position.y + size.y}, // Bottom
+        { x: position.x, y: position.y + size.y},
+        { x: position.x, y: position.y + size.y / 2},
+    ];
+
+    positions.forEach((item) => {
+        ctx.beginPath();
+        ctx.arc(
+            item.x,
+            item.y,
+            radius,
+            0,
+            2 * Math.PI,
+            false
+        );
+        ctx.fillStyle = "#64dd17";
+        ctx.fill();
+    });
 }
 
 export default Canvas;

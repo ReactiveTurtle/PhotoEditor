@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Button from '../button/Button';
 import './SelectSizePopup.css';
 import '../index.css';
-import { setEditor, getEditor } from '../statemanager/StateManager';
+import { dispatch } from '../statemanager/StateManager';
 import { createNewCanvas } from '../helper/CanvasHelper';
 import { Vector2 } from '../structures/Vector2';
 import EditText from '../edittext/EditText';
@@ -42,7 +42,7 @@ export default function SelectSizePopup() {
                     hintText="Введите число"></EditText>
                 <div className="SelectSizePopup-buttonWrapper">
                     <Button text="Создать" onClick={() => {
-                        setEditor(createNewCanvas(getEditor(), size));
+                        dispatch(createNewCanvas, size);
                         closeSelectSizePopup();
                     }}></Button>
                 </div>
