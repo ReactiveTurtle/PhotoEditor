@@ -1,23 +1,20 @@
 import { Art } from "../structures/Art";
-import { Circle } from "../structures/Circle";
-import { Polygon } from "../structures/Polygon";
+import { Point, Polygon } from "../structures/Polygon";
 import { TextObject } from "../structures/TextObject";
 import { Types } from "../structures/Type";
 import { Vector2 } from "../structures/Vector2";
+import { length } from "./VectorHelper";
 
 export function drawObject(
     context: CanvasRenderingContext2D,
     size: Vector2,
-    selectedObject: TextObject | Polygon | Circle | Art
+    selectedObject: TextObject | Polygon | Art
 ) {
     let newImageData: ImageData | undefined;
 
     switch (selectedObject.type) {
         case Types.Polygon:
             newImageData = drawPolygon(context, size, selectedObject as Polygon);
-            break;
-        case Types.Circle:
-            newImageData = drawCircle(context, size, selectedObject as Circle);
             break;
         case Types.Art:
             newImageData = drawArt(context, size, selectedObject as Art);
@@ -36,76 +33,57 @@ function drawPolygon(ctx: CanvasRenderingContext2D,
     size: Vector2,
     polygon: Polygon
 ): ImageData | undefined {
-    ctx.beginPath();
-    ctx.moveTo(
-        polygon.position.x + polygon.points[0].x,
-        polygon.position.y + polygon.points[0].y);
-    polygon.points.forEach(element => {
-        ctx.lineTo(polygon.position.x + element.x,
-            polygon.position.y + element.y);
-    });
-    ctx.lineTo(
-        polygon.position.x + polygon.points[0].x,
-        polygon.position.y + polygon.points[0].y);
-    if (polygon.points.length > 1) {
-        ctx.lineTo(
-            polygon.position.x + polygon.points[1].x,
-            polygon.position.y + polygon.points[1].y);
-    }
+    createPath(ctx, polygon)
     ctx.fillStyle = polygon.fillColor;
     ctx.fill();
 
-    ctx.beginPath();
     ctx.lineWidth = polygon.strokeWidth;
-    ctx.moveTo(
-        polygon.position.x + polygon.points[0].x,
-        polygon.position.y + polygon.points[0].y);
-    polygon.points.forEach(element => {
-        ctx.lineTo(polygon.position.x + element.x,
-            polygon.position.y + element.y);
-    });
-    ctx.lineTo(
-        polygon.position.x + polygon.points[0].x,
-        polygon.position.y + polygon.points[0].y);
-    if (polygon.points.length > 1) {
-        ctx.lineTo(
-            polygon.position.x + polygon.points[1].x,
-            polygon.position.y + polygon.points[1].y);
-    }
     ctx.strokeStyle = polygon.strokeColor;
     ctx.stroke();
     return ctx.getImageData(0, 0, size.x, size.y);
 }
 
-function drawCircle(ctx: CanvasRenderingContext2D,
-    size: Vector2,
-    circle: Circle) {
-    let strokeWidth = circle.strokeWidth / 2;
-    ctx.lineWidth = circle.strokeWidth;
+function createPath(ctx: CanvasRenderingContext2D, polygon: Polygon): void {
     ctx.beginPath();
-    ctx.arc(
-        circle.position.x + circle.radius,
-        circle.position.y + circle.radius,
-        circle.radius + strokeWidth,
-        0,
-        2 * Math.PI,
-        false
-    );
-    ctx.strokeStyle = circle.strokeColor;
-    ctx.stroke();
+    let isFirstVisited = false;
+    let point: Point | null = polygon.firstPoint;
+    while (point != null && (!isFirstVisited || point != polygon.firstPoint)) {
+        let point1;
+        if (point.next != null && point.previous != null) {
+            point1 = getPoint(point, point.previous)
+        } else {
+            point1 = { x: point.x, y: point.y }
+        }
 
-    ctx.beginPath();
-    ctx.arc(
-        circle.position.x + circle.radius,
-        circle.position.y + circle.radius,
-        circle.radius,
-        0,
-        2 * Math.PI,
-        false
-    );
-    ctx.fillStyle = circle.fillColor;
-    ctx.fill();
-    return ctx.getImageData(0, 0, size.x, size.y);
+        if (!isFirstVisited) {
+            isFirstVisited = true
+            ctx.moveTo(point1.x + polygon.position.x, point1.y + polygon.position.y);
+        } else {
+            ctx.lineTo(point1.x + polygon.position.x, point1.y + polygon.position.y);
+        }
+        if (point.next != null && point.previous != null) {
+            const point2 = getPoint(point, point.next);
+            ctx.quadraticCurveTo(point.x + polygon.position.x, point.y + polygon.position.y,
+                point2.x + polygon.position.x, point2.y + polygon.position.y);
+        }
+        point = point.next;
+    }
+    ctx.closePath();
+}
+
+function getPoint(first: Point, second: Point): Vector2 {
+    const dir = {
+        x: first.x - second.x,
+        y: first.y - second.y
+    }
+    let len = length(dir);
+    const cos = dir.x / len;
+    const sin = dir.y / len;
+    len -= first.radius;
+    return {
+        x: second.x + len * cos,
+        y: second.y + len * sin
+    }
 }
 
 function drawArt(ctx: CanvasRenderingContext2D,

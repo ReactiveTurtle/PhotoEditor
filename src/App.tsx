@@ -18,7 +18,8 @@ function App({ editor }: AppProps) {
     const [currentTool, setCurrentTool] = useState(ToolType.Rectangle);
     useEffect(() => {
         const listener = (e: KeyboardEvent) => {
-            if (e.ctrlKey) {
+            if (e.ctrlKey && e.shiftKey) {
+                e.stopPropagation();
                 console.log(e.code);
                 if (e.code === "KeyZ") {
                     setEditor(undo());
@@ -27,9 +28,9 @@ function App({ editor }: AppProps) {
                 }
             }
         }
-        window.addEventListener("keypress", listener)
+        window.addEventListener("keydown", listener)
         return () => {
-            window.removeEventListener("keypress", listener);
+            window.removeEventListener("keydown", listener)
         }
     })
     return (

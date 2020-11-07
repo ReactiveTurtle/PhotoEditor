@@ -23,8 +23,12 @@ export function setEditor(editor: Editor): void {
     render();
 }
 
-export function dispatch(fun: Function, param: any, isUpdateHistory: boolean = false) {
-    setEditor(fun(getEditor(), param) as Editor);
+export function dispatch(fun: Function, param: any = undefined, isUpdateHistory: boolean = false) {
+    if (param !== undefined) {
+        setEditor(fun(getEditor(), param) as Editor);
+    } else {
+        setEditor(fun(getEditor()) as Editor);
+    }
     if (isUpdateHistory) {
         pushHistory(copyImageData(mEditor.canvas));
     }

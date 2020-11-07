@@ -1,13 +1,13 @@
 import { Art } from "../structures/Art";
-import { Circle } from "../structures/Circle";
 import { Editor } from "../structures/Editor";
 import { Polygon } from "../structures/Polygon";
 import { TextObject } from "../structures/TextObject";
+import { copyImageData } from "./CanvasHelper";
 import { drawObject } from "./DrawHelper";
 
 export function replaceSelectedObject(
     editor: Editor,
-    newSelectedObject: TextObject | Polygon | Circle | Art | null
+    newSelectedObject: TextObject | Polygon | Art | null
 ) {
     let newEditor: Editor = {
         ...editor,
@@ -25,5 +25,14 @@ export function replaceSelectedObject(
             }
         }
     }
+    return newEditor;
+}
+
+export function removeSelectedObject(
+    editor: Editor) {
+    let newEditor: Editor = {
+        canvas: copyImageData(editor.canvas),
+        selectedObject: null
+    };
     return newEditor;
 }
