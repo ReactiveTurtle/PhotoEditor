@@ -2,7 +2,6 @@ import React from 'react';
 import EditText from '../edittext/EditText';
 import { replaceSelectedObject } from '../helper/EditorHelper';
 import { dispatch, getEditor, render, setEditor } from '../statemanager/StateManager';
-import { Circle } from '../structures/Circle';
 import { Polygon } from '../structures/Polygon';
 import { Types } from '../structures/Type';
 import './ColorPicker.css';
@@ -21,9 +20,8 @@ function ColorPicker() {
                         const editor = getEditor();
                         const selectedObject = editor.selectedObject;
                         if (selectedObject != null) {
-                            if (selectedObject.type === Types.Polygon
-                                || selectedObject.type === Types.Circle) {
-                                const objRTC: Polygon | Circle = selectedObject;
+                            if (selectedObject.type === Types.Polygon) {
+                                const objRTC: Polygon = selectedObject;
                                 objRTC.fillColor = input.value;
                                 editor.selectedObject = null;
 
@@ -45,9 +43,8 @@ function ColorPicker() {
                         const editor = getEditor();
                         const selectedObject = editor.selectedObject;
                         if (selectedObject != null) {
-                            if (selectedObject.type === Types.Polygon
-                                || selectedObject.type === Types.Circle) {
-                                const objRTC: Polygon | Circle = selectedObject;
+                            if (selectedObject.type === Types.Polygon) {
+                                const objRTC: Polygon = selectedObject;
                                 objRTC.strokeColor = input.value;
 
                                 editor.selectedObject = null;

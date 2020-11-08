@@ -10,6 +10,7 @@ import { ToolType } from '../tool/Tools';
 import { Art } from '../structures/Art';
 import { TextObject } from '../structures/TextObject';
 import { removeSelectedObject, replaceSelectedObject } from '../helper/EditorHelper';
+import { length } from '../helper/VectorHelper';
 
 interface CanvasProps {
     tool: ToolType,
@@ -47,7 +48,7 @@ export default function Canvas({ tool, selectedObject, imageData }: CanvasProps)
                 height={imageData.height}
                 onMouseDown={(e) => {
                     const canvas = e.target as HTMLCanvasElement;
-                    if (canvas.style.cursor.endsWith("-resize")) {
+                    if (canvas.style.cursor.endsWith("pointer")) {
                         if (selectedObject != null) {
                             dispatch(removeSelectedObject);
                             setTempObject(selectedObject);
@@ -55,32 +56,6 @@ export default function Canvas({ tool, selectedObject, imageData }: CanvasProps)
                                 x: e.clientX - canvas.offsetLeft,
                                 y: e.clientY - canvas.offsetTop
                             });
-                        }
-                        switch (canvas.style.cursor.replace("-resize", "")) {
-                            case "nw":
-                                setResizeDirection({ x: -1, y: -1 })
-                                break;
-                            case "n":
-                                setResizeDirection({ x: 0, y: -1 })
-                                break;
-                            case "ne":
-                                setResizeDirection({ x: 1, y: -1 })
-                                break;
-                            case "e":
-                                setResizeDirection({ x: 1, y: 0 })
-                                break;
-                            case "se":
-                                setResizeDirection({ x: 1, y: 1 })
-                                break;
-                            case "s":
-                                setResizeDirection({ x: 0, y: 1 })
-                                break;
-                            case "sw":
-                                setResizeDirection({ x: -1, y: 1 })
-                                break;
-                            case "w":
-                                setResizeDirection({ x: -1, y: 0 })
-                                break;
                         }
                     } else if (canvas.style.cursor === "move") {
                         if (selectedObject != null) {
@@ -107,53 +82,11 @@ export default function Canvas({ tool, selectedObject, imageData }: CanvasProps)
                         y: e.clientY - canvas.offsetTop
                     };
                     if (isCanvasDown) {
-                        if (canvas.style.cursor.endsWith("-resize")) {
-                            if (tempObject != null) {
-                                const border: Vector2 = {
-                                    x: tempObject.position.x
-                                        + -Math.min(resizeDirection.x, 0) * tempObject.size.x,
-                                    y: tempObject.position.y
-                                        + -Math.min(resizeDirection.y, 0) * tempObject.size.y
-                                }
-                                const isChangeDirX = (moveEnd.x - border.x) * resizeDirection.x < 0;
-                                const isChangeDirY = (moveEnd.y - border.y) * resizeDirection.y < 0;
-                                if (isChangeDirX) {
-                                    start.x = border.x;
-                                    tempObject.size.x = 0;
-                                    resizeDirection.x *= -1;
-                                }
-                                if (isChangeDirY) {
-                                    start.y = border.y;
-                                    tempObject.size.y = 0;
-                                    resizeDirection.y *= -1;
-                                }
-                                if (isChangeDirX || isChangeDirY) {
-                                    canvas.style.cursor = getDirCursor(resizeDirection);
-                                }
-                                const xDelta = moveEnd.x - start.x;
-                                const yDelta = moveEnd.y - start.y;
-                                const newStartPosition = {
-                                    x: tempObject.position.x
-                                        + -Math.min(resizeDirection.x, 0) * xDelta,
-                                    y: tempObject.position.y
-                                        + -Math.min(resizeDirection.y, 0) * yDelta
-                                }
-                                const newEndPosition = {
-                                    x: newStartPosition.x + tempObject.size.x
-                                        + xDelta * resizeDirection.x,
-                                    y: newStartPosition.y + tempObject.size.y
-                                        + yDelta * resizeDirection.y
-                                }
-
-                                setStart(moveEnd)
-                                onCreateObject(newStartPosition, newEndPosition);
-                                render();
-                            }
-                        } else if (canvas.style.cursor === "move") {
+                        if (canvas.style.cursor === "move") {
                             if (selectedObject != null) {
                                 selectedObject.position = {
-                                    x: moveEnd.x - start.x,
-                                    y: moveEnd.y - start.y
+                                    x: selectedObject.position.x + moveEnd.x - start.x,
+                                    y: selectedObject.position.y + moveEnd.y - start.y
                                 }
                                 setStart(moveEnd)
                                 render();
@@ -184,38 +117,42 @@ function setupCursor(canvas: HTMLCanvasElement,
     moveEnd: Vector2,
     selectedObject: Polygon | TextObject | Art | null = null) {
     if (selectedObject != null) {
-        const position = {
-            x: Math.min(selectedObject.position.x + selectedObject.size.x, selectedObject.position.x),
-            y: Math.min(selectedObject.position.y + selectedObject.size.y, selectedObject.position.y)
-        };
-        const size = {
-            x: Math.abs(selectedObject.size.x),
-            y: Math.abs(selectedObject.size.y)
+        let isFirstVisited = false;
+        const polygon = selectedObject as Polygon;
+        let point: Point | null = polygon.firstPoint;
+        let isMovePoint = false;
+        let isMovePolygon = false;
+        while (!isMovePoint && !isMovePolygon && point != null && (!isFirstVisited || point != polygon.firstPoint)) {
+            if (!isFirstVisited) {
+                isFirstVisited = true;
+            }
+            isMovePoint = length({
+                x: polygon.position.x + point.x - moveEnd.x,
+                y: polygon.position.y + point.y - moveEnd.y
+            }) <= 8;
+            let mean: Vector2 | null = null;
+            if (point.previous != null && point.next != null) {
+                mean = {
+                    x: point.previous.x / 2 + point.next.x / 2,
+                    y: point.previous.y / 2 + point.next.y / 2
+                }
+                const dir = {
+                    x: point.x - mean.x,
+                    y: point.y - mean.y
+                } as Vector2
+                const dirLength = length(dir);
+                const newLength = dirLength + 20;
+                isMovePolygon = length({
+                    x: moveEnd.x - (polygon.position.x + dir.x / dirLength * newLength + mean.x),
+                    y: moveEnd.y - (polygon.position.y + dir.y / dirLength * newLength + mean.y)
+                }) <= 8
+            }
+            point = point.next;
         }
 
-        const positions: Array<Vector2> = [
-            { x: position.x, y: position.y }, //Left Top
-            { x: position.x + size.x / 2, y: position.y }, // Top
-            { x: position.x + size.x, y: position.y }, // Right Top
-            { x: position.x + size.x, y: position.y + size.y / 2 }, // Right
-            { x: position.x + size.x, y: position.y + size.y }, // Right Bottom
-            { x: position.x + size.x / 2, y: position.y + size.y }, // Bottom
-            { x: position.x, y: position.y + size.y }, // Left Bottom
-            { x: position.x, y: position.y + size.y / 2 }, // Left
-        ];
-        const resizes = positions.map((item) => {
-            const dist = Math.sqrt(Math.pow(item.x - moveEnd.x, 2) +
-                Math.pow(item.y - moveEnd.y, 2));
-            return dist <= 8 + 4;
-        });
-        if (resizes.some(item => item)) {
-            const pos = positions[resizes.findIndex(item => item)];
-            const center: Vector2 = { x: position.x + size.x / 2, y: position.y + size.y / 2 };
-            canvas.style.cursor = getDirCursor({ x: pos.x - center.x, y: pos.y - center.y });
-        } else if (moveEnd.x >= selectedObject.position.x
-            && moveEnd.x <= selectedObject.position.x + selectedObject.size.x
-            && moveEnd.y >= position.y
-            && moveEnd.y <= position.y + selectedObject.size.y) {
+        if (isMovePoint) {
+            canvas.style.cursor = "pointer";
+        } else if (isMovePolygon) {
             canvas.style.cursor = "move";
         } else {
             canvas.style.cursor = "default";
@@ -223,22 +160,6 @@ function setupCursor(canvas: HTMLCanvasElement,
     } else {
         canvas.style.cursor = "default";
     }
-}
-
-function getDirCursor(dir: Vector2) {
-    let x = "";
-    if (dir.x > 0) {
-        x = "e";
-    } else if (dir.x < 0) {
-        x = "w";
-    }
-    let y = "";
-    if (dir.y > 0) {
-        y = "s";
-    } else if (dir.y < 0) {
-        y = "n";
-    }
-    return y + x + "-resize";
 }
 
 function renderCanvas(imageData: ImageData,
@@ -263,30 +184,47 @@ function renderCanvas(imageData: ImageData,
 
 function drawBorder(polygon: Polygon, ctx: CanvasRenderingContext2D) {
     ctx.beginPath();
-    ctx.lineWidth = 2;
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "#64dd17";
-    ctx.stroke();
-
     const radius = 8;
 
     let isFirstVisited = false;
     let point: Point | null = polygon.firstPoint;
     while (point != null && (!isFirstVisited || point != polygon.firstPoint)) {
+        if (!isFirstVisited) {
+            isFirstVisited = true;
+        }
+        ctx.moveTo(polygon.position.x + point.x, polygon.position.y + point.y);
+        ctx.arc(polygon.position.x + point.x, polygon.position.y + point.y, radius, 0, Math.PI * 2);
+
+        let mean: Vector2 | null = null;
+        if (point.previous != null && point.next != null) {
+            mean = {
+                x: point.previous.x / 2 + point.next.x / 2,
+                y: point.previous.y / 2 + point.next.y / 2
+            }
+            const dir = {
+                x: point.x - mean.x,
+                y: point.y - mean.y
+            } as Vector2
+            const dirLength = length(dir);
+            const newLength = dirLength + 24;
+            const movePoint = {
+                x: polygon.position.x + dir.x / dirLength * newLength + mean.x,
+                y: polygon.position.y + dir.y / dirLength * newLength + mean.y
+            }
+            ctx.moveTo(movePoint.x - 8, movePoint.y);
+            ctx.lineTo(movePoint.x + 8, movePoint.y);
+            ctx.moveTo(movePoint.x, movePoint.y - 8);
+            ctx.lineTo(movePoint.x, movePoint.y + 8);
+        }
+        
+        point = point.next;
     }
-    positions.forEach((item) => {
-        ctx.beginPath();
-        ctx.arc(
-            item.x,
-            item.y,
-            radius,
-            0,
-            2 * Math.PI,
-            false
-        );
-        ctx.fillStyle = "#64dd17";
-        ctx.fill();
-    });
+    ctx.closePath();
+    ctx.fillStyle = "#64dd17";
+    ctx.strokeStyle = "#64dd17";
+    ctx.lineWidth = 2;
+    ctx.fill();
+    ctx.stroke();
 }
 
 function createRectangle(downStart: Vector2, moveEnd: Vector2): Polygon {

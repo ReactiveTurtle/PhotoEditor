@@ -47,9 +47,9 @@ function createPath(ctx: CanvasRenderingContext2D, polygon: Polygon): void {
     ctx.beginPath();
     let isFirstVisited = false;
     let point: Point | null = polygon.firstPoint;
-    while (point != null && (!isFirstVisited || point != polygon.firstPoint)) {
+    while (point !== null && (!isFirstVisited || point != polygon.firstPoint)) {
         let point1;
-        if (point.next != null && point.previous != null) {
+        if (point.next !== null && point.previous !== null) {
             point1 = getPoint(point, point.previous)
         } else {
             point1 = { x: point.x, y: point.y }
@@ -61,7 +61,7 @@ function createPath(ctx: CanvasRenderingContext2D, polygon: Polygon): void {
         } else {
             ctx.lineTo(point1.x + polygon.position.x, point1.y + polygon.position.y);
         }
-        if (point.next != null && point.previous != null) {
+        if (point.next !== null && point.previous !== null) {
             const point2 = getPoint(point, point.next);
             ctx.quadraticCurveTo(point.x + polygon.position.x, point.y + polygon.position.y,
                 point2.x + polygon.position.x, point2.y + polygon.position.y);

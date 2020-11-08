@@ -25,7 +25,7 @@ export function getCenter(polygon: Polygon): Vector2 {
 	let minY = 0;
 	let maxX = 0;
 	let maxY = 0;
-    while (point != null && (!isFirstVisited || point != polygon.firstPoint)) {
+    while (point !== null && (!isFirstVisited || point !== polygon.firstPoint)) {
 		if (!isFirstVisited) {
 			isFirstVisited = true;
 			minX = point.x;
