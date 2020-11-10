@@ -1,0 +1,16 @@
+.Tools-root {
+    display: flex;
+    width: fit-content;
+    align-items: center;
+}
+
+.Tools-title {
+    font: 600 16px cursive;
+    padding: 16px;
+}
+
+.Tools-list {
+    display: flex;
+    flex-direction: row;
+    padding: 0;
+}

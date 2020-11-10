@@ -38,8 +38,10 @@ function drawPolygon(ctx: CanvasRenderingContext2D,
     ctx.fill();
 
     ctx.lineWidth = polygon.strokeWidth;
-    ctx.strokeStyle = polygon.strokeColor;
-    ctx.stroke();
+    if (polygon.strokeWidth > 0) {
+        ctx.strokeStyle = polygon.strokeColor;
+        ctx.stroke();
+    }
     return ctx.getImageData(0, 0, size.x, size.y);
 }
 
@@ -47,7 +49,7 @@ function createPath(ctx: CanvasRenderingContext2D, polygon: Polygon): void {
     ctx.beginPath();
     let isFirstVisited = false;
     let point: Point | null = polygon.firstPoint;
-    while (point !== null && (!isFirstVisited || point != polygon.firstPoint)) {
+    while (point !== null && (!isFirstVisited || point !== polygon.firstPoint)) {
         let point1;
         if (point.next !== null && point.previous !== null) {
             point1 = getPoint(point, point.previous)
@@ -63,8 +65,16 @@ function createPath(ctx: CanvasRenderingContext2D, polygon: Polygon): void {
         }
         if (point.next !== null && point.previous !== null) {
             const point2 = getPoint(point, point.next);
-            ctx.quadraticCurveTo(point.x + polygon.position.x, point.y + polygon.position.y,
-                point2.x + polygon.position.x, point2.y + polygon.position.y);
+            const dir1Length = length({ x: point.x - point.previous.x, y: point.y - point.previous.y });
+            const dir2Length = length({ x: point.x - point.next.x, y: point.y - point.next.y });
+
+            if (dir1Length === dir2Length && Math.round(point.radius) === dir1Length / 2) {
+                ctx.arcTo(point.x + polygon.position.x, point.y + polygon.position.y,
+                    point2.x + polygon.position.x, point2.y + polygon.position.y, point.radius);
+            } else {
+                ctx.quadraticCurveTo(point.x + polygon.position.x, point.y + polygon.position.y,
+                    point2.x + polygon.position.x, point2.y + polygon.position.y);
+            }
         }
         point = point.next;
     }
@@ -79,7 +89,7 @@ function getPoint(first: Point, second: Point): Vector2 {
     let len = length(dir);
     const cos = dir.x / len;
     const sin = dir.y / len;
-    len -= first.radius;
+    len = Math.max(len - first.radius, len / 2);
     return {
         x: second.x + len * cos,
         y: second.y + len * sin
@@ -89,7 +99,7 @@ function getPoint(first: Point, second: Point): Vector2 {
 function drawArt(ctx: CanvasRenderingContext2D,
     size: Vector2,
     art: Art) {
-    ctx.putImageData(art.image, art.position.x, art.position.y)
+    ctx.putImageData(art.image, art.polygon.position.x, art.polygon.position.y)
     return ctx.getImageData(0, 0, size.x, size.y);
 }
 

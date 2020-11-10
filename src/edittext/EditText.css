@@ -22,4 +22,5 @@
     outline: none;
     margin: 10px 0 0 0;
     min-width: 128px;
+    width: fit-content;
 }
