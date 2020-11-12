@@ -1,3 +1,3 @@
 export enum Types {
-    Art, Polygon, TextObject
+    Art, Rectangle, Triangle, Circle, TextObject, Area
 }

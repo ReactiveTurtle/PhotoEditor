@@ -4,7 +4,7 @@ import { render } from '../../statemanager/StateManager';
 import './Tools.css';
 
 export enum ToolType {
-    Rectangle = 0, Triangle = 1, Circle = 2, Text = 3
+    Rectangle = 0, Triangle = 1, Circle = 2, Text = 3, Area = 4
 }
 
 interface ToolsProps {
@@ -75,6 +75,20 @@ export default function Tools({ onSelected }: ToolsProps) {
                         <circle r="16" cx="16" cy="16"
                             fill="#424242"
                         />
+                    </SvgIcon>
+                </ListItem>
+                <ListItem button
+                    onClick={() => onClick(ToolType.Text)}
+                    className={classes.item + " " + (currentTool === ToolType.Text ? classes.selectedItem : "")}>
+                    <SvgIcon viewBox="0 0 24 24" style={{ margin: "auto" }}>
+                        <path d="M5 4v3h5.5v12h3V7H19V4z" />
+                    </SvgIcon>
+                </ListItem>
+                <ListItem button
+                    onClick={() => onClick(ToolType.Area)}
+                    className={classes.item + " " + (currentTool === ToolType.Area ? classes.selectedItem : "")}>
+                    <SvgIcon viewBox="0 0 24 24" style={{ margin: "auto" }}>
+                        <path d="M17 15h2V7c0-1.1-.9-2-2-2H9v2h8v8zM7 17V1H5v4H1v2h4v10c0 1.1.9 2 2 2h10v4h2v-4h4v-2H7z" />
                     </SvgIcon>
                 </ListItem>
             </List>

@@ -1,13 +1,15 @@
 import { Art } from "../structures/Art";
+import { Circle } from "../structures/Circle";
 import { Editor } from "../structures/Editor";
-import { Polygon } from "../structures/Polygon";
+import { Rectangle } from "../structures/Rectangle";
 import { TextObject } from "../structures/TextObject";
+import { Triangle } from "../structures/Triangle";
 import { copyImageData } from "./CanvasHelper";
 import { drawObject } from "./DrawHelper";
 
 export function replaceSelectedObject(
     editor: Editor,
-    newSelectedObject: TextObject | Polygon | Art | null
+    newSelectedObject: Rectangle | Triangle | Circle | TextObject | Art | null
 ) {
     let newEditor: Editor = {
         ...editor,

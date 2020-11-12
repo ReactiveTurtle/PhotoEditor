@@ -1,10 +1,10 @@
+import { Rectangle } from './Rectangle';
 import { Types } from './Type';
-import { Vector2 } from './Vector2';
 
 export type TextObject = {
-	type: Types.TextObject,
+	type: Types.TextObject;
+	rectangle: Rectangle;	
 	text: string;
-	color: string;
-	size: Vector2;
-	position: Vector2;
+	textColor: string;
+	textSize: number;
 };

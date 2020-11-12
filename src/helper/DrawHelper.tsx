@@ -1,20 +1,27 @@
 import { Art } from "../structures/Art";
-import { Point, Polygon } from "../structures/Polygon";
+import { Circle } from "../structures/Circle";
+import { Rectangle } from "../structures/Rectangle";
 import { TextObject } from "../structures/TextObject";
+import { Triangle } from "../structures/Triangle";
 import { Types } from "../structures/Type";
 import { Vector2 } from "../structures/Vector2";
-import { length } from "./VectorHelper";
 
 export function drawObject(
     context: CanvasRenderingContext2D,
     size: Vector2,
-    selectedObject: TextObject | Polygon | Art
+    selectedObject: TextObject | Rectangle | Triangle | Circle | Art
 ) {
     let newImageData: ImageData | undefined;
 
     switch (selectedObject.type) {
-        case Types.Polygon:
-            newImageData = drawPolygon(context, size, selectedObject as Polygon);
+        case Types.Rectangle:
+            newImageData = drawRectangle(context, size, selectedObject as Rectangle);
+            break;
+        case Types.Triangle:
+            newImageData = drawTriangle(context, size, selectedObject as Triangle);
+            break;
+        case Types.Circle:
+            newImageData = drawCircle(context, size, selectedObject as Circle);
             break;
         case Types.Art:
             newImageData = drawArt(context, size, selectedObject as Art);
@@ -29,85 +36,98 @@ export function drawObject(
     return newImageData;
 }
 
-function drawPolygon(ctx: CanvasRenderingContext2D,
+function drawRectangle(ctx: CanvasRenderingContext2D,
     size: Vector2,
-    polygon: Polygon
+    rectangle: Rectangle
 ): ImageData | undefined {
-    createPath(ctx, polygon)
-    ctx.fillStyle = polygon.fillColor;
+    ctx.beginPath();
+    ctx.moveTo(rectangle.position.x, rectangle.position.y);
+    ctx.lineTo(rectangle.position.x + rectangle.size.x, rectangle.position.y);
+    ctx.lineTo(rectangle.position.x + rectangle.size.x, rectangle.position.y + rectangle.size.y);
+    ctx.lineTo(rectangle.position.x, rectangle.position.y + rectangle.size.y);
+    ctx.closePath();
+
+    ctx.fillStyle = rectangle.props.fillColor;
     ctx.fill();
 
-    ctx.lineWidth = polygon.strokeWidth;
-    if (polygon.strokeWidth > 0) {
-        ctx.strokeStyle = polygon.strokeColor;
+    if (rectangle.props.strokeWidth > 0) {
+        ctx.lineWidth = rectangle.props.strokeWidth;
+        ctx.strokeStyle = rectangle.props.strokeColor;
         ctx.stroke();
     }
     return ctx.getImageData(0, 0, size.x, size.y);
 }
 
-function createPath(ctx: CanvasRenderingContext2D, polygon: Polygon): void {
-    ctx.beginPath();
-    let isFirstVisited = false;
-    let point: Point | null = polygon.firstPoint;
-    while (point !== null && (!isFirstVisited || point !== polygon.firstPoint)) {
-        let point1;
-        if (point.next !== null && point.previous !== null) {
-            point1 = getPoint(point, point.previous)
-        } else {
-            point1 = { x: point.x, y: point.y }
-        }
-
-        if (!isFirstVisited) {
-            isFirstVisited = true
-            ctx.moveTo(point1.x + polygon.position.x, point1.y + polygon.position.y);
-        } else {
-            ctx.lineTo(point1.x + polygon.position.x, point1.y + polygon.position.y);
-        }
-        if (point.next !== null && point.previous !== null) {
-            const point2 = getPoint(point, point.next);
-            const dir1Length = length({ x: point.x - point.previous.x, y: point.y - point.previous.y });
-            const dir2Length = length({ x: point.x - point.next.x, y: point.y - point.next.y });
-
-            if (dir1Length === dir2Length && Math.round(point.radius) === dir1Length / 2) {
-                ctx.arcTo(point.x + polygon.position.x, point.y + polygon.position.y,
-                    point2.x + polygon.position.x, point2.y + polygon.position.y, point.radius);
-            } else {
-                ctx.quadraticCurveTo(point.x + polygon.position.x, point.y + polygon.position.y,
-                    point2.x + polygon.position.x, point2.y + polygon.position.y);
-            }
-        }
-        point = point.next;
-    }
-    ctx.closePath();
-}
-
-function getPoint(first: Point, second: Point): Vector2 {
-    const dir = {
-        x: first.x - second.x,
-        y: first.y - second.y
-    }
-    let len = length(dir);
-    const cos = dir.x / len;
-    const sin = dir.y / len;
-    len = Math.max(len - first.radius, len / 2);
-    return {
-        x: second.x + len * cos,
-        y: second.y + len * sin
-    }
-}
-
-function drawArt(ctx: CanvasRenderingContext2D,
+function drawTriangle(ctx: CanvasRenderingContext2D,
     size: Vector2,
-    art: Art) {
-    ctx.putImageData(art.image, art.polygon.position.x, art.polygon.position.y)
+    triangle: Triangle
+): ImageData | undefined {
+    ctx.beginPath();
+    ctx.moveTo(triangle.p0.x, triangle.p0.y);
+    ctx.lineTo(triangle.p1.x, triangle.p1.y);
+    ctx.lineTo(triangle.p2.x, triangle.p2.y);
+    ctx.closePath();
+
+    ctx.fillStyle = triangle.props.fillColor;
+    ctx.fill();
+
+    if (triangle.props.strokeWidth > 0) {
+        ctx.lineWidth = triangle.props.strokeWidth;
+        ctx.strokeStyle = triangle.props.strokeColor;
+        ctx.stroke();
+    }
+    return ctx.getImageData(0, 0, size.x, size.y);
+}
+
+function drawCircle(ctx: CanvasRenderingContext2D,
+    size: Vector2,
+    circle: Circle
+): ImageData | undefined {
+    ctx.beginPath();
+    ctx.moveTo(circle.position.x + circle.radius, circle.position.y);
+    ctx.arc(circle.position.x, circle.position.y, circle.radius, 0, Math.PI * 2);
+    ctx.closePath();
+
+    ctx.fillStyle = circle.props.fillColor;
+    ctx.fill();
+
+    if (circle.props.strokeWidth > 0) {
+        ctx.lineWidth = circle.props.strokeWidth;
+        ctx.strokeStyle = circle.props.strokeColor;
+        ctx.stroke();
+    }
+    return ctx.getImageData(0, 0, size.x, size.y);
+}
+
+function drawArt(ctx: CanvasRenderingContext2D, size: Vector2, art: Art) {
+    const canvasCtx = document.createElement("canvas");
+    canvasCtx.width = art.image.width;
+    canvasCtx.height = art.image.height;
+    const imageCtx = canvasCtx.getContext("2d");
+    if (imageCtx === null) {
+        throw new Error();
+    }
+    imageCtx.putImageData(art.image, 0, 0);
+    const canvasScaled = document.createElement("canvas");
+    canvasScaled.width = Math.max(1, art.size.x);
+    canvasScaled.height = Math.max(1, art.size.y);
+    const imageScaled = canvasScaled.getContext("2d");
+    if (imageScaled === null) {
+        throw new Error();
+    }
+    imageScaled.scale(art.size.x / art.image.width, art.size.y / art.image.height);
+    imageScaled.drawImage(canvasCtx, 0, 0);
+    ctx.drawImage(canvasScaled, art.position.x, art.position.y);
     return ctx.getImageData(0, 0, size.x, size.y);
 }
 
 function drawText(ctx: CanvasRenderingContext2D,
     size: Vector2,
     text: TextObject) {
-    ctx.font = `${text.size.y}px monospace`;
-    ctx.fillStyle = text.color;
-    ctx.fillText(text.text, text.position.x, text.position.y, text.size.x);
+    ctx.font = `${text.textSize}px monospace`;
+    drawRectangle(ctx, size, text.rectangle);
+    ctx.fillStyle = text.textColor;
+    ctx.fillText(text.text, text.rectangle.position.x + 2,
+        text.rectangle.position.y + text.textSize);
     return ctx.getImageData(0, 0, size.x, size.y);
 }

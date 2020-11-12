@@ -19,8 +19,7 @@ let mEditor: Editor = {
 
 export function setEditor(editor: Editor): void {
     mEditor = editor;
-    console.log(editor);
-    console.log(imageHistory.history.length + ", " + imageHistory.currentHistoryPosition);
+    render();
 }
 
 export function dispatch(fun: Function, param: any = undefined, isUpdateHistory: boolean = false) {

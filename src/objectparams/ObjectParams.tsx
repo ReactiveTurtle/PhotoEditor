@@ -2,7 +2,10 @@ import React from 'react';
 import EditText from '../edittext/EditText';
 import { replaceSelectedObject } from '../helper/EditorHelper';
 import { dispatch, getEditor, render, setEditor } from '../statemanager/StateManager';
-import { Polygon } from '../structures/Polygon';
+import { Circle } from '../structures/Circle';
+import { Rectangle } from '../structures/Rectangle';
+import { TextObject } from '../structures/TextObject';
+import { Triangle } from '../structures/Triangle';
 import { Types } from '../structures/Type';
 import './ObjectParams.css';
 
@@ -20,13 +23,21 @@ function ColorPicker() {
                         const editor = getEditor();
                         const selectedObject = editor.selectedObject;
                         if (selectedObject != null) {
-                            if (selectedObject.type === Types.Polygon) {
-                                const objRTC: Polygon = selectedObject;
-                                objRTC.fillColor = input.value;
+                            if (selectedObject.type === Types.Rectangle
+                                || selectedObject.type === Types.Triangle
+                                || selectedObject.type === Types.Circle
+                                || selectedObject.type === Types.TextObject) {
+                                let objRTC: Rectangle | Triangle | Circle;
+                                if (selectedObject.type === Types.TextObject) {
+                                    objRTC = (selectedObject as TextObject).rectangle;
+                                } else {
+                                    objRTC = selectedObject as Rectangle | Triangle | Circle;
+                                }
+                                objRTC.props.fillColor = input.value;
                                 editor.selectedObject = null;
 
                                 setEditor(editor);
-                                dispatch(replaceSelectedObject, objRTC);
+                                dispatch(replaceSelectedObject, selectedObject);
 
                                 input.onchange = null;
                                 render();
@@ -43,14 +54,22 @@ function ColorPicker() {
                         const editor = getEditor();
                         const selectedObject = editor.selectedObject;
                         if (selectedObject != null) {
-                            if (selectedObject.type === Types.Polygon) {
-                                const objRTC: Polygon = selectedObject;
-                                objRTC.strokeColor = input.value;
-
+                            if (selectedObject.type === Types.Rectangle
+                                || selectedObject.type === Types.Triangle
+                                || selectedObject.type === Types.Circle
+                                || selectedObject.type === Types.TextObject) {
+                                let objRTC: Rectangle | Triangle | Circle;
+                                if (selectedObject.type === Types.TextObject) {
+                                    objRTC = (selectedObject as TextObject).rectangle;
+                                } else {
+                                    objRTC = selectedObject as Rectangle | Triangle | Circle;
+                                }
+                                objRTC.props.strokeColor = input.value;
                                 editor.selectedObject = null;
-                                setEditor(editor);
 
-                                dispatch(replaceSelectedObject, objRTC);
+                                setEditor(editor);
+                                dispatch(replaceSelectedObject, selectedObject);
+
                                 input.onchange = null;
                                 render();
                             }
@@ -67,14 +86,22 @@ function ColorPicker() {
                         const editor = getEditor();
                         const selectedObject = editor.selectedObject;
                         if (selectedObject != null) {
-                            if (selectedObject.type === Types.Polygon) {
-                                const objRTC: Polygon = selectedObject;
-                                objRTC.strokeWidth = getStrokeWidth();
-
+                            if (selectedObject.type === Types.Rectangle
+                                || selectedObject.type === Types.Triangle
+                                || selectedObject.type === Types.Circle
+                                || selectedObject.type === Types.TextObject) {
+                                let objRTC: Rectangle | Triangle | Circle;
+                                if (selectedObject.type === Types.TextObject) {
+                                    objRTC = (selectedObject as TextObject).rectangle;
+                                } else {
+                                    objRTC = selectedObject as Rectangle | Triangle | Circle;
+                                }
+                                objRTC.props.strokeWidth = parseInt(input.value);
                                 editor.selectedObject = null;
-                                setEditor(editor);
 
-                                dispatch(replaceSelectedObject, objRTC);
+                                setEditor(editor);
+                                dispatch(replaceSelectedObject, selectedObject);
+
                                 input.onchange = null;
                                 render();
                             }
