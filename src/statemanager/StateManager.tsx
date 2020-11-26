@@ -17,9 +17,11 @@ let mEditor: Editor = {
 };
 
 
-export function setEditor(editor: Editor): void {
+export function setEditor(editor: Editor, isRender: boolean = true): void {
     mEditor = editor;
-    render();
+    if (isRender) {
+        render();
+    }
 }
 
 export function dispatch(fun: Function, param: any = undefined, isUpdateHistory: boolean = false) {

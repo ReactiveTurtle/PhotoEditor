@@ -4,10 +4,11 @@ import { dispatch } from '../statemanager/StateManager';
 import './Canvas.css';
 import { Types } from '../structures/Type';
 import { Vector2 } from '../structures/Vector2';
-import { getFillColor, getStrokeColor, getStrokeWidth } from '../objectparams/ObjectParams';
+import { getFillColor, getStrokeColor, getStrokeWidth, getText, getTextColor, getTextSize } from '../objectparams/ObjectParams';
 import { ToolType } from '../components/tool/Tools';
 import { Art } from '../structures/Art';
 import { TextObject } from '../structures/TextObject';
+import { cutSelectedArea, selectArea } from '../helper/CanvasHelper';
 import { removeSelectedObject, replaceSelectedObject } from '../helper/EditorHelper';
 import { length, cosinus } from '../helper/VectorHelper';
 import { Rectangle } from '../structures/Rectangle';
@@ -30,6 +31,49 @@ export default function Canvas({ tool, selectedObject, imageData }: CanvasProps)
     useEffect(() => {
         renderCanvas(imageData, selectedObject, tempObject);
     }, [imageData, selectedObject, tempObject]);
+    useEffect(() => {
+        const listener = (e: KeyboardEvent) => {
+            console.log(e.code);
+            if (e.ctrlKey) {
+                if (e.code === "KeyX") {
+                    if (tempObject != null && tempObject.type === Types.Area) {
+                        dispatch(selectArea, tempObject);
+                        dispatch(cutSelectedArea, undefined, true);
+                        setTempObject(null);
+                        dispatch(removeSelectedObject);
+                    }
+                }
+            } else {
+                switch (e.code) {
+                    case "Escape":
+                        setTempObject(null);
+                        dispatch(replaceSelectedObject, null, true);
+                        break;
+                    case "Delete":
+                        if (tempObject != null && tempObject.type === Types.Area) {
+                            dispatch(selectArea, tempObject);
+                            dispatch(removeSelectedObject, undefined, true);
+                        } else {
+                            dispatch(removeSelectedObject);
+                        }
+                        setTempObject(null);
+                        break;
+                    case "Enter":
+                        if (tempObject != null && tempObject.type === Types.Area) {
+                            dispatch(selectArea, tempObject, false);
+                        } else {
+                            dispatch(replaceSelectedObject, null, true);
+                        }
+                        setTempObject(null);
+                        break;
+                }
+            }
+        }
+        window.addEventListener("keydown", listener)
+        return () => {
+            window.removeEventListener("keydown", listener)
+        }
+    })
     const onCreateObject = (start: Vector2, moveEnd: Vector2) => {
         if (isCanvasDown) {
             let newObject = null;
@@ -72,9 +116,12 @@ export default function Canvas({ tool, selectedObject, imageData }: CanvasProps)
                             });
                         }
                     } else if (canvas.style.cursor === "grab") {
-                        if (selectedObject != null) {
+                        if (selectedObject != null || (tempObject !== null && tempObject.type === Types.Area)) {
                             canvas.style.cursor = "grabbing";
-                            setTempObject(selectedObject);
+
+                            if (selectedObject !== null || tempObject === null || tempObject.type !== Types.Area) {
+                                setTempObject(selectedObject);
+                            }
                             dispatch(removeSelectedObject);
                             setStart({
                                 x: e.clientX - canvas.offsetLeft,
@@ -106,12 +153,13 @@ export default function Canvas({ tool, selectedObject, imageData }: CanvasProps)
                                 if (tempPoint !== null) {
                                     if (tempObject.type === Types.Rectangle
                                         || tempObject.type === Types.TextObject
-                                        || tempObject.type === Types.Art) {
-                                        let objRA: Rectangle | Art;
+                                        || tempObject.type === Types.Art
+                                        || tempObject.type === Types.Area) {
+                                        let objRA: Rectangle | Art | SelectedArea;
                                         if (tempObject.type === Types.TextObject) {
                                             objRA = (tempObject as TextObject).rectangle;
                                         } else {
-                                            objRA = tempObject as Rectangle | Art;
+                                            objRA = tempObject as Rectangle | Art | SelectedArea;
                                         }
                                         if (e.shiftKey && objRA.type === Types.Art) {
                                             const delta: Vector2 = { x: deltaX, y: deltaY };
@@ -176,12 +224,13 @@ export default function Canvas({ tool, selectedObject, imageData }: CanvasProps)
                                 if (tempObject.type === Types.Rectangle
                                     || tempObject.type === Types.Circle
                                     || tempObject.type === Types.TextObject
-                                    || tempObject.type === Types.Art) {
-                                    let objRCA: Rectangle | Circle | Art;
+                                    || tempObject.type === Types.Art
+                                    || tempObject.type === Types.Area) {
+                                    let objRCA: Rectangle | Circle | Art | SelectedArea;
                                     if (tempObject.type === Types.TextObject) {
                                         objRCA = (tempObject as TextObject).rectangle;
                                     } else {
-                                        objRCA = tempObject as Rectangle | Circle | Art;
+                                        objRCA = tempObject as Rectangle | Circle | Art | SelectedArea;
                                     }
                                     objRCA.position.x += deltaX;
                                     objRCA.position.y += deltaY;
@@ -201,7 +250,11 @@ export default function Canvas({ tool, selectedObject, imageData }: CanvasProps)
                             onCreateObject(start, moveEnd);
                         }
                     } else {
-                        setupCursor(canvas, moveEnd, selectedObject, setTempPoint);
+                        if (selectedObject === null && tempObject !== null && tempObject.type === Types.Area) {
+                            setupCursor(canvas, moveEnd, tempObject, setTempPoint);
+                        } else {
+                            setupCursor(canvas, moveEnd, selectedObject, setTempPoint);
+                        }
                         setStart(moveEnd)
                     }
                 }}
@@ -215,6 +268,8 @@ export default function Canvas({ tool, selectedObject, imageData }: CanvasProps)
                         setupCursor(canvas, moveEnd, tempObject, setTempPoint);
                         if (tempObject.type !== Types.Area) {
                             dispatch(replaceSelectedObject, tempObject, false);
+                            setTempObject(null);
+                        } else if (canvas.style.cursor === "default") {
                             setTempObject(null);
                         }
                     } else if (canvas.style.cursor === "default" && selectedObject != null) {
@@ -303,9 +358,9 @@ function createText(downStart: Vector2, moveEnd: Vector2): TextObject {
     return {
         type: Types.TextObject,
         rectangle: createRectangle(downStart, moveEnd),
-        text: "Привет",
-        textSize: 24,
-        textColor: "#F00"
+        text: getText(),
+        textSize: getTextSize(),
+        textColor: getTextColor()
     }
 }
 
@@ -464,6 +519,9 @@ function drawBorder(obj: Rectangle | Triangle | Circle | TextObject | Art | Sele
         } else {
             objRA = obj as Rectangle | Art | SelectedArea;
         }
+        if (obj.type === Types.Area) {
+            ctx.setLineDash([3, 4]);
+        }
         let position = objRA.position;
         let size = objRA.size;
         ctx.beginPath();
@@ -500,6 +558,10 @@ function drawBorder(obj: Rectangle | Triangle | Circle | TextObject | Art | Sele
             { x: position.x, y: position.y + size.y }, // Left Bottom
             { x: position.x, y: position.y + size.y / 2 }, // Left
         ];
+
+        if (obj.type === Types.Area) {
+            ctx.setLineDash([]);
+        }
 
         positions.forEach((item) => {
             ctx.beginPath();

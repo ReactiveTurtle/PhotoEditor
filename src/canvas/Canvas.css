@@ -10,4 +10,7 @@
 .Canvas {
     margin: auto;
     border: 2px solid grey;
+    background: url('../images/canvas_background.jpg');
+    background-size: 64px 64px;
+    background-repeat: repeat;
 }

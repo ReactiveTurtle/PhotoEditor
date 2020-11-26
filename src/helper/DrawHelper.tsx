@@ -5,6 +5,7 @@ import { TextObject } from "../structures/TextObject";
 import { Triangle } from "../structures/Triangle";
 import { Types } from "../structures/Type";
 import { Vector2 } from "../structures/Vector2";
+import { getRGB } from "./ColorHelper";
 
 export function drawObject(
     context: CanvasRenderingContext2D,
@@ -30,6 +31,7 @@ export function drawObject(
             newImageData = drawText(context, size, selectedObject as TextObject);
             break;
     };
+    context.globalAlpha = 1;
     if (newImageData === undefined) {
         throw new Error();
     }
@@ -47,12 +49,14 @@ function drawRectangle(ctx: CanvasRenderingContext2D,
     ctx.lineTo(rectangle.position.x, rectangle.position.y + rectangle.size.y);
     ctx.closePath();
 
-    ctx.fillStyle = rectangle.props.fillColor;
+    ctx.globalAlpha = rectangle.props.fillColor.a;
+    ctx.fillStyle = getRGB(rectangle.props.fillColor);
     ctx.fill();
 
     if (rectangle.props.strokeWidth > 0) {
         ctx.lineWidth = rectangle.props.strokeWidth;
-        ctx.strokeStyle = rectangle.props.strokeColor;
+        ctx.globalAlpha = rectangle.props.strokeColor.a;
+        ctx.strokeStyle = getRGB(rectangle.props.strokeColor);
         ctx.stroke();
     }
     return ctx.getImageData(0, 0, size.x, size.y);
@@ -68,12 +72,14 @@ function drawTriangle(ctx: CanvasRenderingContext2D,
     ctx.lineTo(triangle.p2.x, triangle.p2.y);
     ctx.closePath();
 
-    ctx.fillStyle = triangle.props.fillColor;
+    ctx.globalAlpha = triangle.props.fillColor.a;
+    ctx.fillStyle = getRGB(triangle.props.fillColor);
     ctx.fill();
 
     if (triangle.props.strokeWidth > 0) {
         ctx.lineWidth = triangle.props.strokeWidth;
-        ctx.strokeStyle = triangle.props.strokeColor;
+        ctx.globalAlpha = triangle.props.strokeColor.a;
+        ctx.strokeStyle = getRGB(triangle.props.strokeColor);
         ctx.stroke();
     }
     return ctx.getImageData(0, 0, size.x, size.y);
@@ -88,12 +94,14 @@ function drawCircle(ctx: CanvasRenderingContext2D,
     ctx.arc(circle.position.x, circle.position.y, circle.radius, 0, Math.PI * 2);
     ctx.closePath();
 
-    ctx.fillStyle = circle.props.fillColor;
+    ctx.globalAlpha = circle.props.fillColor.a;
+    ctx.fillStyle = getRGB(circle.props.fillColor);
     ctx.fill();
 
     if (circle.props.strokeWidth > 0) {
         ctx.lineWidth = circle.props.strokeWidth;
-        ctx.strokeStyle = circle.props.strokeColor;
+        ctx.globalAlpha = circle.props.strokeColor.a;
+        ctx.strokeStyle = getRGB(circle.props.strokeColor);
         ctx.stroke();
     }
     return ctx.getImageData(0, 0, size.x, size.y);
@@ -126,7 +134,8 @@ function drawText(ctx: CanvasRenderingContext2D,
     text: TextObject) {
     ctx.font = `${text.textSize}px monospace`;
     drawRectangle(ctx, size, text.rectangle);
-    ctx.fillStyle = text.textColor;
+    ctx.globalAlpha = text.textColor.a;
+    ctx.fillStyle = getRGB(text.textColor);
     ctx.fillText(text.text, text.rectangle.position.x + 2,
         text.rectangle.position.y + text.textSize);
     return ctx.getImageData(0, 0, size.x, size.y);

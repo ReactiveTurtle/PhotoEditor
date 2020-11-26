@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import './App.css';
 import SelectSizePopup from './components/selectsizepopup/SelectSizePopup';
 import Canvas from './canvas/Canvas';
-import ColorPicker from './objectparams/ObjectParams';
-import { exportObject, importObject } from './helper/CanvasHelper';
+import ObjectParams from './objectparams/ObjectParams';
+import { createNewCanvas, editCanvasSize, exportObject, importObject } from './helper/CanvasHelper';
 import './structures/Vector2';
 import Tools, { ToolType } from './components/tool/Tools';
-import { dispatch, redo, render, setEditor, undo } from './statemanager/StateManager';
+import { dispatch, getEditor, redo, render, setEditor, undo } from './statemanager/StateManager';
 import { Editor } from './structures/Editor';
 import { AppBar, Box, IconButton, SvgIcon, Toolbar, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, ThemeProvider } from '@material-ui/core/styles';
@@ -14,8 +14,13 @@ import { createStyles, makeStyles, Theme, ThemeProvider } from '@material-ui/cor
 import { createMuiTheme } from '@material-ui/core/styles';
 import deepPurple from '@material-ui/core/colors/deepPurple';
 import green from '@material-ui/core/colors/green';
-import { removeSelectedObject, replaceSelectedObject } from './helper/EditorHelper';
+import { replaceSelectedObject } from './helper/EditorHelper';
 import { Art } from './structures/Art';
+import FilterMenu from './components/filtermenu/FilterMenu';
+import { applyBrightnessFilter, applyFilter } from './helper/FilterHelper';
+import { Filter } from './structures/Filter';
+import BrightnessSlider from './components/brightslider/BrightnessSlider';
+import { useTimeout } from './components/timeout/Timeout';
 
 const theme = createMuiTheme({
     palette: {
@@ -51,6 +56,9 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 function App({ editor }: AppProps) {
+    const timer = useTimeout();
+    const [isBrightSliderShown, setBrightSliderShown] = useState(false);
+    const [tempEditor, setTempEditor] = useState<Editor | null>(null);
     const [currentTool, setCurrentTool] = useState(ToolType.Rectangle);
     useEffect(() => {
         const listener = (e: KeyboardEvent) => {
@@ -60,15 +68,6 @@ function App({ editor }: AppProps) {
                     setEditor(undo());
                 } else if (e.code === "KeyY") {
                     setEditor(redo());
-                }
-            } else {
-                switch (e.code) {
-                    case "Escape":
-                        dispatch(replaceSelectedObject, null);
-                        break;
-                    case "Delete":
-                        dispatch(removeSelectedObject);
-                        break;
                 }
             }
         }
@@ -91,12 +90,27 @@ function App({ editor }: AppProps) {
                             <Typography variant="h6" color="inherit" className={classes.title}>
                                 Reactive Photo Editor
                         </Typography>
-                            <SelectSizePopup></SelectSizePopup>
+                            <SelectSizePopup
+                                applyText="Создать"
+                                fun={createNewCanvas}>
+                                <SvgIcon>
+                                    <path d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                                </SvgIcon>
+                            </SelectSizePopup>
+                            <SelectSizePopup
+                                applyText="Изменить"
+                                fun={editCanvasSize}>
+                                <SvgIcon>
+                                    <path d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
+                                </SvgIcon>
+                            </SelectSizePopup>
                             <IconButton aria-label="Загрузить"
                                 color="inherit"
                                 onClick={() => {
                                     importObject((art: Art) => {
-                                        dispatch(replaceSelectedObject, art, true);
+                                        dispatch(replaceSelectedObject, art, getEditor().selectedObject !== null);
                                         render();
                                     })
                                 }}>
@@ -108,7 +122,11 @@ function App({ editor }: AppProps) {
                             <IconButton aria-label="Сохранить"
                                 color="inherit"
                                 edge="end"
-                                onClick={() => { exportObject() }}>
+                                onClick={() => {
+                                    dispatch(replaceSelectedObject, null, false);
+                                    exportObject();
+                                    setEditor(editor);
+                                }}>
                                 <SvgIcon>
                                     <path d="M0 0h24v24H0z" fill="none" />
                                     <path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z" />
@@ -119,8 +137,40 @@ function App({ editor }: AppProps) {
                     <Tools onSelected={(tool) => {
                         setCurrentTool(tool);
                     }}></Tools>
+                    <FilterMenu
+                        onSelect={(filter) => {
+                            if (getEditor().selectedObject !== null) {
+                                dispatch(replaceSelectedObject, null, true);
+                                render();
+                            }
+                            if (filter !== Filter.Brightness) {
+                                dispatch(applyFilter, filter, true);
+                                render();
+                            } else {
+                                setTempEditor(getEditor());
+                                setBrightSliderShown(true);
+                            }
+                        }}></FilterMenu>
                 </Box>
-                <ColorPicker></ColorPicker>
+                {currentTool !== ToolType.Area &&
+                    <ObjectParams tool={currentTool}></ObjectParams>
+                }
+                {isBrightSliderShown
+                    && <BrightnessSlider
+                        onChange={(value) => {
+                            if (tempEditor === null) {
+                                return;
+                            }
+                            timer(16, () => {
+                                setEditor(tempEditor, false);
+                                dispatch(applyBrightnessFilter, value);
+                            });
+                        }}
+                        onApply={() => {
+                            setBrightSliderShown(false);
+                            dispatch(replaceSelectedObject, null, true);
+                        }}
+                    ></BrightnessSlider>}
             </ThemeProvider>
         </div>
     );

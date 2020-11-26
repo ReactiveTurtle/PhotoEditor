@@ -1,5 +1,7 @@
+import { RGBAColor } from "./RGBAColor";
+
 export type DrawProps = {
-    fillColor: string,
-    strokeColor: string,
+    fillColor: RGBAColor,
+    strokeColor: RGBAColor,
     strokeWidth: number
 }

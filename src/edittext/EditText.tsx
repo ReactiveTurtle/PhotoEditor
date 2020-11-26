@@ -10,6 +10,7 @@ interface EditTextProps {
     hintText?: string,
     type: string,
     onChange(e: ChangeEvent<HTMLInputElement>): void
+    onClick?: Function
 }
 
 export default function EditText(props: EditTextProps) {
@@ -22,8 +23,25 @@ export default function EditText(props: EditTextProps) {
                 min={props.min}
                 defaultValue={props.text}
                 placeholder={props.hintText}
+                onFocus={() => {
+                    if (props.onClick !== undefined) {
+                        props.onClick();
+                    }
+                }}
+                onClick={() => {
+                    if (props.onClick !== undefined) {
+                        props.onClick();
+                    }
+                }}
                 onChange={(e) => props.onChange(e)}></input>
-            <label className="Number-label" htmlFor="newWidth">{props.title}</label>
+            <label
+                className="Number-label"
+                htmlFor="newWidth"
+                onClick={() => {
+                    if (props.onClick !== undefined) {
+                        props.onClick();
+                    }
+                }}>{props.title}</label>
         </div>
     );
 }

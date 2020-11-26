@@ -1,5 +1,6 @@
 import { Art } from '../structures/Art';
 import { Editor } from '../structures/Editor'
+import { SelectedArea } from '../structures/SelectedArea';
 import { Types } from '../structures/Type';
 import { Vector2 } from '../structures/Vector2'
 
@@ -18,6 +19,64 @@ export function createNewCanvas(editor: Editor, size: Vector2): Editor {
 	const newEditor: Editor = {
 		...editor,
 		selectedObject: null,
+		canvas: newCanvas,
+	};
+	return newEditor;
+}
+
+export function editCanvasSize(editor: Editor, size: Vector2): Editor {
+	let imageData = new ImageData(size.x, size.y);
+	imageData.data.fill(255);
+	let minWidth = Math.min(size.x, editor.canvas.width);
+	let minHeight = Math.min(size.y, editor.canvas.height);
+
+	for (let i = 0; i < minHeight; i++) {
+		for (let j = 0; j < minWidth; j++) {
+			let dataIndex = (i * size.x + j) * 4;
+			let canvasDataIndex = (i * editor.canvas.width + j) * 4;
+			for (let k = 0; k < 4; k++) {
+				imageData.data[dataIndex + k] = editor.canvas.data[canvasDataIndex + k];
+			}
+		}
+	}
+	const newEditor: Editor = {
+		...editor,
+		canvas: imageData,
+	};
+	return newEditor;
+}
+
+export function cutSelectedArea(editor: Editor) {
+	var newCanvas = copyImageData((editor.selectedObject as Art).image);
+	const newEditor: Editor = {
+		canvas: newCanvas,
+		selectedObject: null,
+	};
+	return newEditor;
+}
+
+export function selectArea(editor: Editor, selectedArea: SelectedArea): Editor {
+	let art: Art = {
+		type: Types.Art,
+		image: new ImageData(selectedArea.size.x, selectedArea.size.y),
+		position: selectedArea.position,
+		size: selectedArea.size,
+	};
+	const newCanvas = copyImageData(editor.canvas);
+	for (let i = 0; i < art.size.y; i++) {
+		for (let j = 0; j < art.size.x; j++) {
+			let dstIndex = (i * art.size.x + j) * 4;
+			let srcIndex =
+				((i + art.position.y) * newCanvas.width + j + art.position.x) * 4;
+			for (let k = 0; k < 4; k++) {
+				art.image.data[dstIndex + k] = editor.canvas.data[srcIndex + k];
+			}
+			newCanvas.data[srcIndex + 3] = 0;
+		}
+	}
+	const newEditor: Editor = {
+		...editor,
+		selectedObject: art,
 		canvas: newCanvas,
 	};
 	return newEditor;
