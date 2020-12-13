@@ -1,0 +1,2 @@
+const CREATE_NEW_CANVAS = "CREATE_NEW_CANVAS";
+export default CREATE_NEW_CANVAS;

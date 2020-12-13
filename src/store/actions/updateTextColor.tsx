@@ -1,0 +1,2 @@
+const UPDATE_TEXT_COLOR = "UPDATE_TEXT_COLOR";
+export default UPDATE_TEXT_COLOR;

@@ -1,9 +1,18 @@
-import { createNewCanvas } from './helper/CanvasHelper';
+import { Provider } from 'react-redux';
+import App from './App';
 import reportWebVitals from './reportWebVitals';
-import { dispatch, render } from './statemanager/StateManager';
-import { Vector2 } from './structures/Vector2';
+import store from './store/store';
+import React from 'react';
+import ReactDOM from 'react-dom';
 
-dispatch(createNewCanvas, { x: 800, y: 600 } as Vector2, true);
 render();
+export function render() {
+    ReactDOM.render(
+        <Provider store={store}>
+            <App />
+        </Provider>,
+        document.getElementById('root')
+    );
+}
 
 reportWebVitals();

@@ -1,0 +1,2 @@
+const PUSH_TO_HISTORY = "PUSH_TO_HISTORY";
+export default PUSH_TO_HISTORY;

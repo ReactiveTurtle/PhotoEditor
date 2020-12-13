@@ -16,10 +16,13 @@ export function replaceSelectedObject(
         selectedObject: newSelectedObject,
     };
     if (editor.selectedObject != null) {
-        const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+        const canvas = document.createElement("canvas");
+        canvas.width = editor.canvas.width;
+        canvas.height = editor.canvas.height;
         if (canvas != null) {
             const ctx = canvas.getContext("2d");
             if (ctx != null) {
+                console.log(ctx);
                 ctx.putImageData(editor.canvas, 0, 0);
                 newEditor.canvas = drawObject(ctx,
                     { x: editor.canvas.width, y: editor.canvas.height },

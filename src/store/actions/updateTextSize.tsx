@@ -1,0 +1,2 @@
+const UPDATE_TEXT_SIZE = "UPDATE_TEXT_SIZE";
+export default UPDATE_TEXT_SIZE;

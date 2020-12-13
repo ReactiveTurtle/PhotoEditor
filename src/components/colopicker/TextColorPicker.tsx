@@ -2,7 +2,6 @@ import React, { CSSProperties, useState } from 'react';
 import { ChromePicker, ColorResult } from 'react-color';
 import EditText from '../../edittext/EditText';
 import { toHexColor, toRGBAColor } from '../../helper/ColorHelper';
-import { render } from '../../statemanager/StateManager';
 import { RGBAColor } from '../../structures/RGBAColor';
 
 interface ColorPickerProps {
@@ -77,7 +76,6 @@ export default function TextColorPicker(props: ColorPickerProps) {
                         const newColor = toRGBAColor(e.target.value);
                         setColor(newColor);
                         props.onChange(newColor);
-                        render();
                     }}></EditText>
             </div>
         </div >

@@ -1,0 +1,2 @@
+const UPDATE_FILL_COLOR = "UPDATE_FILL_COLOR";
+export default UPDATE_FILL_COLOR;

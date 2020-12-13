@@ -1,0 +1,2 @@
+const CUT_SELECTED_AREA = "CUT_SELECTED_AREA";
+export default CUT_SELECTED_AREA;

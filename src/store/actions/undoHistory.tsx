@@ -1,0 +1,2 @@
+const UNDO_HISTORY = "UNDO_HISTORY";
+export default UNDO_HISTORY;

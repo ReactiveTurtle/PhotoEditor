@@ -1,26 +1,36 @@
 import React, { useEffect, useState } from 'react';
 import './App.css';
-import SelectSizePopup from './components/selectsizepopup/SelectSizePopup';
-import Canvas from './canvas/Canvas';
+import SelectSizePopup from './components/selectsizepopup/SelectSizeDialog';
+import Canvas from './components/canvas/Canvas';
 import ObjectParams from './objectparams/ObjectParams';
-import { createNewCanvas, editCanvasSize, exportObject, importObject } from './helper/CanvasHelper';
+import { exportObject, importObject } from './helper/CanvasHelper';
 import './structures/Vector2';
 import Tools, { ToolType } from './components/tool/Tools';
-import { dispatch, getEditor, redo, render, setEditor, undo } from './statemanager/StateManager';
 import { Editor } from './structures/Editor';
 import { AppBar, Box, IconButton, SvgIcon, Toolbar, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, ThemeProvider } from '@material-ui/core/styles';
 
 import { createMuiTheme } from '@material-ui/core/styles';
 import deepPurple from '@material-ui/core/colors/deepPurple';
-import green from '@material-ui/core/colors/green';
-import { replaceSelectedObject } from './helper/EditorHelper';
 import { Art } from './structures/Art';
 import FilterMenu from './components/filtermenu/FilterMenu';
-import { applyBrightnessFilter, applyFilter } from './helper/FilterHelper';
+import { applyBrightnessFilter } from './helper/FilterHelper';
 import { Filter } from './structures/Filter';
 import BrightnessSlider from './components/brightslider/BrightnessSlider';
 import { useTimeout } from './components/timeout/Timeout';
+import PasteArtDialog from './components/pasteartdialog/PasteArtDialog';
+import { shallowEqual, useDispatch, useSelector } from 'react-redux';
+import { ViewModel } from './viewmodel/ViewModel';
+import undoHistory from './store/actionCreators/undoHistory';
+import redoHistory from './store/actionCreators/redoHistory';
+import actionReplaceSelectedObject from './store/actionCreators/actionReplaceSelectedObject';
+import setEditor from './store/actionCreators/setEditor';
+import pushToHistory from './store/actionCreators/pushToHistory';
+import editCanvasSize from './store/actionCreators/editCanvasSize';
+import applyFilter from './store/actionCreators/applyFilter';
+import createNewCanvas from './store/actionCreators/createNewCanvas';
+import { replaceSelectedObject } from './helper/EditorHelper';
+import { purple, red } from '@material-ui/core/colors';
 
 const theme = createMuiTheme({
     palette: {
@@ -28,15 +38,11 @@ const theme = createMuiTheme({
             main: deepPurple["A700"],
         },
         secondary: {
-            main: green["A700"],
-            light: green["A200"],
+            main: purple["A700"],
+            light: red["A400"],
         },
     },
 });
-
-interface AppProps {
-    editor: Editor
-}
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -55,35 +61,43 @@ const useStyles = makeStyles((theme: Theme) =>
     }),
 );
 
-function App({ editor }: AppProps) {
-    const timer = useTimeout();
+function App() {
+    const timeout = useTimeout();
+    const dispatch = useDispatch();
+    const editor: Editor = useSelector(
+        (state: ViewModel) => state.editor,
+        shallowEqual
+    )
+    const currentTool: ToolType = useSelector(
+        (state: ViewModel) => state.currentTool
+    )
     const [isBrightSliderShown, setBrightSliderShown] = useState(false);
     const [tempEditor, setTempEditor] = useState<Editor | null>(null);
-    const [currentTool, setCurrentTool] = useState(ToolType.Rectangle);
+    const classes = useStyles();
+
+    const [isPasteArtDialogOpen, setPasteArtDialogOpen] = useState(false);
+    const [pasteArt, setPasteArt] = useState<Art | null>(null);
+
     useEffect(() => {
         const listener = (e: KeyboardEvent) => {
-            console.log(e.code);
             if (e.ctrlKey) {
                 if (e.code === "KeyZ") {
-                    setEditor(undo());
+                    dispatch(undoHistory());
                 } else if (e.code === "KeyY") {
-                    setEditor(redo());
+                    dispatch(redoHistory());
                 }
             }
         }
         window.addEventListener("keydown", listener)
         return () => {
-            window.removeEventListener("keydown", listener)
+            window.removeEventListener("keydown", listener);
         }
     })
-    const classes = useStyles();
     return (
         <div className="App"
             id="App">
             <ThemeProvider theme={theme}>
-                <Canvas tool={currentTool}
-                    imageData={editor.canvas}
-                    selectedObject={editor.selectedObject}></Canvas>
+                <Canvas></Canvas>
                 <Box position="fixed" className={classes.root}>
                     <AppBar position="static" style={{ background: "#6200ea" }}>
                         <Toolbar>
@@ -92,7 +106,7 @@ function App({ editor }: AppProps) {
                         </Typography>
                             <SelectSizePopup
                                 applyText="Создать"
-                                fun={createNewCanvas}>
+                                action={createNewCanvas({ x: 0, y: 0 })}>
                                 <SvgIcon>
                                     <path d="M0 0h24v24H0z" fill="none" />
                                     <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
@@ -100,7 +114,7 @@ function App({ editor }: AppProps) {
                             </SelectSizePopup>
                             <SelectSizePopup
                                 applyText="Изменить"
-                                fun={editCanvasSize}>
+                                action={editCanvasSize({ x: 0, y: 0 })}>
                                 <SvgIcon>
                                     <path d="M0 0h24v24H0z" fill="none" />
                                     <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
@@ -110,8 +124,8 @@ function App({ editor }: AppProps) {
                                 color="inherit"
                                 onClick={() => {
                                     importObject((art: Art) => {
-                                        dispatch(replaceSelectedObject, art, getEditor().selectedObject !== null);
-                                        render();
+                                        setPasteArt(art);
+                                        setPasteArtDialogOpen(true);
                                     })
                                 }}>
                                 <SvgIcon>
@@ -123,52 +137,90 @@ function App({ editor }: AppProps) {
                                 color="inherit"
                                 edge="end"
                                 onClick={() => {
-                                    dispatch(replaceSelectedObject, null, false);
+                                    setTempEditor(editor);
+                                    dispatch(actionReplaceSelectedObject(null));
                                     exportObject();
-                                    setEditor(editor);
+                                    dispatch(setEditor(editor));
                                 }}>
                                 <SvgIcon>
                                     <path d="M0 0h24v24H0z" fill="none" />
                                     <path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z" />
                                 </SvgIcon>
                             </IconButton>
+                            {isPasteArtDialogOpen && <PasteArtDialog
+                                isOpen={isPasteArtDialogOpen}
+                                onSaveSize={() => {
+                                    const isPushToHistory = editor.selectedObject !== null;
+                                    const historyCanvas = editor.canvas;
+                                    dispatch(actionReplaceSelectedObject(pasteArt));
+                                    if (isPushToHistory) {
+                                        dispatch(pushToHistory(historyCanvas));
+                                    }
+                                }}
+                                onChangeSize={() => {
+                                    const isPushToHistory = editor.selectedObject !== null;
+                                    const historyCanvas = editor.canvas;
+                                    if (pasteArt === null) {
+                                        throw new Error();
+                                    }
+                                    dispatch(editCanvasSize(pasteArt.size));
+                                    dispatch(actionReplaceSelectedObject(pasteArt));
+                                    if (isPushToHistory) {
+                                        dispatch(pushToHistory(historyCanvas));
+                                    }
+                                }}
+                                onClose={() => {
+                                    setPasteArtDialogOpen(false);
+                                    setPasteArt(null);
+                                }}></PasteArtDialog>}
                         </Toolbar>
                     </AppBar>
-                    <Tools onSelected={(tool) => {
-                        setCurrentTool(tool);
+                    <Tools onSelected={() => {
+                        if (isBrightSliderShown) {
+                            if (tempEditor === null) {
+                                throw new Error();
+                            }
+                            dispatch(setEditor(tempEditor))
+                            setBrightSliderShown(false);
+                        }
                     }}></Tools>
                     <FilterMenu
                         onSelect={(filter) => {
-                            if (getEditor().selectedObject !== null) {
-                                dispatch(replaceSelectedObject, null, true);
-                                render();
+                            let temp = editor;
+                            if (editor.selectedObject != null) {
+                                const newEditor = replaceSelectedObject(editor, null);
+                                dispatch(pushToHistory(newEditor.canvas));
+                                dispatch(setEditor(newEditor));
+                                temp = newEditor;
                             }
                             if (filter !== Filter.Brightness) {
-                                dispatch(applyFilter, filter, true);
-                                render();
+                                dispatch(applyFilter(filter));
                             } else {
-                                setTempEditor(getEditor());
+                                setTempEditor(temp);
                                 setBrightSliderShown(true);
                             }
                         }}></FilterMenu>
                 </Box>
-                {currentTool !== ToolType.Area &&
-                    <ObjectParams tool={currentTool}></ObjectParams>
-                }
+                {currentTool !== ToolType.Area && <ObjectParams />}
                 {isBrightSliderShown
                     && <BrightnessSlider
                         onChange={(value) => {
                             if (tempEditor === null) {
                                 return;
                             }
-                            timer(16, () => {
-                                setEditor(tempEditor, false);
-                                dispatch(applyBrightnessFilter, value);
+                            timeout(16, () => {
+                                const brightEditor = applyBrightnessFilter(tempEditor, value);
+                                dispatch(setEditor(brightEditor))
                             });
                         }}
-                        onApply={() => {
+                        onApply={(value) => {
                             setBrightSliderShown(false);
-                            dispatch(replaceSelectedObject, null, true);
+                            if (value === 1) {
+                                return;
+                            }
+                            const newEditor = replaceSelectedObject(editor, null);
+                            dispatch(pushToHistory(newEditor.canvas));
+                            dispatch(setEditor(newEditor));
                         }}
                     ></BrightnessSlider>}
             </ThemeProvider>

@@ -1,68 +1,121 @@
-import React, { useEffect, useState } from 'react';
-import { drawObject } from '../helper/DrawHelper';
-import { dispatch } from '../statemanager/StateManager';
+import React, { useEffect, useRef, useState } from 'react';
+import { drawObject } from '../../helper/DrawHelper';
 import './Canvas.css';
-import { Types } from '../structures/Type';
-import { Vector2 } from '../structures/Vector2';
-import { getFillColor, getStrokeColor, getStrokeWidth, getText, getTextColor, getTextSize } from '../objectparams/ObjectParams';
-import { ToolType } from '../components/tool/Tools';
-import { Art } from '../structures/Art';
-import { TextObject } from '../structures/TextObject';
-import { cutSelectedArea, selectArea } from '../helper/CanvasHelper';
-import { removeSelectedObject, replaceSelectedObject } from '../helper/EditorHelper';
-import { length, cosinus } from '../helper/VectorHelper';
-import { Rectangle } from '../structures/Rectangle';
-import { Triangle } from '../structures/Triangle';
-import { Circle } from '../structures/Circle';
-import { SelectedArea } from '../structures/SelectedArea';
+import { Types } from '../../structures/Type';
+import { Vector2 } from '../../structures/Vector2';
+import { ToolType } from '../tool/Tools';
+import { Art } from '../../structures/Art';
+import { TextObject } from '../../structures/TextObject';
+import { length, cosinus } from '../../helper/VectorHelper';
+import { Rectangle } from '../../structures/Rectangle';
+import { Triangle } from '../../structures/Triangle';
+import { Circle } from '../../structures/Circle';
+import { SelectedArea } from '../../structures/SelectedArea';
+import { createArea, createCircle, createRectangle, createText, createTriangle } from '../../helper/ObjectCreateHelper';
+import removeSelectedObject from '../../store/actionCreators/removeSelectedObject';
+import selectArea from '../../store/actionCreators/selectArea';
+import { shallowEqual, useDispatch, useSelector } from 'react-redux';
+import { Editor } from '../../structures/Editor';
+import { ViewModel } from '../../viewmodel/ViewModel';
+import cutSelectedArea from '../../store/actionCreators/cutSelectedArea';
+import pushToHistory from '../../store/actionCreators/pushToHistory';
+import { ObjectState } from '../../viewmodel/ObjectState';
+import actionReplaceSelectedObject from '../../store/actionCreators/actionReplaceSelectedObject';
+import { DrawProps } from '../../structures/DrawProps';
+import { replaceSelectedObject } from '../../helper/EditorHelper';
+import setEditor from '../../store/actionCreators/setEditor';
 
-interface CanvasProps {
-    tool: ToolType,
-    selectedObject: TextObject | Rectangle | Triangle | Circle | Art | null,
-    imageData: ImageData,
-}
-
-export default function Canvas({ tool, selectedObject, imageData }: CanvasProps) {
+export default function Canvas() {
     const [isCanvasDown, setCanvasDown] = useState(false);
     const [tempObject, setTempObject] = useState<Rectangle | Triangle | Circle | TextObject | Art | SelectedArea | null>(null);
     const [tempPoint, setTempPoint] = useState<Vector2 | null>(null);
     const [start, setStart] = useState<Vector2>({ x: 0, y: 0 });
 
+    const dispatch = useDispatch();
+    const editor: Editor = useSelector(
+        (state: ViewModel) => state.editor,
+        shallowEqual
+    )
+    const imageData = editor.canvas;
+    const selectedObject = editor.selectedObject;
+    const tool: ToolType = useSelector(
+        (state: ViewModel) => state.currentTool
+    )
+
+    const objectState: ObjectState = useSelector(
+        (state: ViewModel) => state.objectState,
+        shallowEqual
+    )
+    if (selectedObject != null) {
+        if (selectedObject.type === Types.Rectangle ||
+            selectedObject.type === Types.Triangle ||
+            selectedObject.type === Types.Circle ||
+            selectedObject.type === Types.TextObject) {
+            let drawProps: DrawProps;
+            if (selectedObject.type === Types.TextObject) {
+                const textObject = selectedObject as TextObject;
+                textObject.text = objectState.text;
+                textObject.textSize = objectState.textSize;
+                textObject.textColor = objectState.textColor;
+                drawProps = textObject.rectangle.props;
+            } else {
+                drawProps = selectedObject.props;
+            }
+            drawProps.fillColor = objectState.fillColor;
+            drawProps.strokeColor = objectState.strokeColor;
+            drawProps.strokeWidth = objectState.strokeWidth;
+        }
+    }
+
+    const canvasElement = useRef<HTMLCanvasElement>(null);
     useEffect(() => {
-        renderCanvas(imageData, selectedObject, tempObject);
+        if (canvasElement.current != null) {
+            renderCanvas(canvasElement.current, imageData, selectedObject, tempObject);
+        }
     }, [imageData, selectedObject, tempObject]);
     useEffect(() => {
         const listener = (e: KeyboardEvent) => {
-            console.log(e.code);
             if (e.ctrlKey) {
                 if (e.code === "KeyX") {
                     if (tempObject != null && tempObject.type === Types.Area) {
-                        dispatch(selectArea, tempObject);
-                        dispatch(cutSelectedArea, undefined, true);
+                        dispatch(selectArea(tempObject as SelectedArea));
+
+                        let historyCanvas = editor.canvas;
+                        dispatch(cutSelectedArea());
+                        dispatch(pushToHistory(historyCanvas));
+
                         setTempObject(null);
-                        dispatch(removeSelectedObject);
+                        dispatch(removeSelectedObject());
                     }
+                } else if (e.code === "KeyA") {
+                    setTempObject(createArea({ x: 0, y: 0 }, { x: imageData.width, y: imageData.height }, objectState));
                 }
             } else {
                 switch (e.code) {
                     case "Escape":
                         setTempObject(null);
-                        dispatch(replaceSelectedObject, null, true);
+                        const newEditor = replaceSelectedObject(editor, null);
+                        dispatch(pushToHistory(newEditor.canvas));
+                        dispatch(setEditor(newEditor));
                         break;
                     case "Delete":
                         if (tempObject != null && tempObject.type === Types.Area) {
-                            dispatch(selectArea, tempObject);
-                            dispatch(removeSelectedObject, undefined, true);
+                            dispatch(selectArea(tempObject as SelectedArea));
+                            const historyCanvas = editor.canvas;
+                            dispatch(removeSelectedObject());
+                            dispatch(pushToHistory(historyCanvas));
                         } else {
-                            dispatch(removeSelectedObject);
+                            dispatch(removeSelectedObject());
                         }
                         setTempObject(null);
                         break;
                     case "Enter":
                         if (tempObject != null && tempObject.type === Types.Area) {
-                            dispatch(selectArea, tempObject, false);
+                            dispatch(selectArea(tempObject as SelectedArea));
                         } else {
-                            dispatch(replaceSelectedObject, null, true);
+                            const historyCanvas = editor.canvas;
+                            dispatch(actionReplaceSelectedObject(null));
+                            dispatch(pushToHistory(historyCanvas));
                         }
                         setTempObject(null);
                         break;
@@ -80,19 +133,19 @@ export default function Canvas({ tool, selectedObject, imageData }: CanvasProps)
             console.log(tool)
             switch (tool) {
                 case ToolType.Rectangle:
-                    newObject = createRectangle(start, moveEnd);
+                    newObject = createRectangle(start, moveEnd, objectState);
                     break;
                 case ToolType.Triangle:
-                    newObject = createTriangle(start, moveEnd);
+                    newObject = createTriangle(start, moveEnd, objectState);
                     break;
                 case ToolType.Circle:
-                    newObject = createCircle(start, moveEnd);
+                    newObject = createCircle(start, moveEnd, objectState);
                     break;
                 case ToolType.Text:
-                    newObject = createText(start, moveEnd);
+                    newObject = createText(start, moveEnd, objectState);
                     break;
                 case ToolType.Area:
-                    newObject = createArea(start, moveEnd);
+                    newObject = createArea(start, moveEnd, objectState);
                     break;
             }
             setTempObject(newObject);
@@ -101,15 +154,25 @@ export default function Canvas({ tool, selectedObject, imageData }: CanvasProps)
     return (
         <div className="Canvas-container">
             <canvas id="canvas"
+                ref={canvasElement}
                 className="Canvas"
                 width={imageData.width}
                 height={imageData.height}
                 onMouseDown={(e) => {
-                    const canvas = e.target as HTMLCanvasElement;
+                    const canvas = canvasElement.current;
+                    if (canvas === null) {
+                        return;
+                    }
                     if (canvas.style.cursor === "pointer") {
                         if (selectedObject != null) {
                             setTempObject(selectedObject);
-                            dispatch(removeSelectedObject);
+                            const ctx = canvas.getContext("2d");
+                            if (ctx == null) {
+                                return
+                            }
+                            if (selectedObject != null) {
+                                dispatch(removeSelectedObject());
+                            }
                             setStart({
                                 x: e.clientX - canvas.offsetLeft,
                                 y: e.clientY - canvas.offsetTop
@@ -122,7 +185,7 @@ export default function Canvas({ tool, selectedObject, imageData }: CanvasProps)
                             if (selectedObject !== null || tempObject === null || tempObject.type !== Types.Area) {
                                 setTempObject(selectedObject);
                             }
-                            dispatch(removeSelectedObject);
+                            dispatch(removeSelectedObject());
                             setStart({
                                 x: e.clientX - canvas.offsetLeft,
                                 y: e.clientY - canvas.offsetTop
@@ -130,7 +193,9 @@ export default function Canvas({ tool, selectedObject, imageData }: CanvasProps)
                         }
                     } else {
                         if (selectedObject != null) {
-                            dispatch(replaceSelectedObject, null, true);
+                            const newEditor = replaceSelectedObject(editor, null);
+                            dispatch(pushToHistory(newEditor.canvas));
+                            dispatch(setEditor(newEditor));
                         }
                         setStart({
                             x: e.clientX - canvas.offsetLeft,
@@ -140,12 +205,20 @@ export default function Canvas({ tool, selectedObject, imageData }: CanvasProps)
                     setCanvasDown(true);
                 }}
                 onMouseMove={(e) => {
-                    const canvas = e.target as HTMLCanvasElement;
+                    const canvas = canvasElement.current;
+                    if (canvas === null) {
+                        return;
+                    }
                     const moveEnd: Vector2 = {
                         x: e.clientX - canvas.offsetLeft,
                         y: e.clientY - canvas.offsetTop
                     };
                     if (isCanvasDown) {
+                        if (selectedObject != null) {
+                            const newEditor = replaceSelectedObject(editor, null);
+                            dispatch(pushToHistory(newEditor.canvas));
+                            dispatch(setEditor(newEditor));
+                        }
                         let deltaX = moveEnd.x - start.x;
                         let deltaY = moveEnd.y - start.y;
                         if (canvas.style.cursor === "pointer") {
@@ -218,7 +291,9 @@ export default function Canvas({ tool, selectedObject, imageData }: CanvasProps)
                                 }
                             }
                             setStart(moveEnd)
-                            renderCanvas(imageData, null, tempObject);
+                            if (canvasElement.current != null) {
+                                renderCanvas(canvasElement.current, imageData, null, tempObject);
+                            }
                         } else if (canvas.style.cursor === "grabbing") {
                             if (tempObject != null) {
                                 if (tempObject.type === Types.Rectangle
@@ -245,7 +320,9 @@ export default function Canvas({ tool, selectedObject, imageData }: CanvasProps)
                                 }
                             }
                             setStart(moveEnd)
-                            renderCanvas(imageData, null, tempObject);
+                            if (canvasElement.current != null) {
+                                renderCanvas(canvasElement.current, imageData, null, tempObject);
+                            }
                         } else {
                             onCreateObject(start, moveEnd);
                         }
@@ -259,7 +336,10 @@ export default function Canvas({ tool, selectedObject, imageData }: CanvasProps)
                     }
                 }}
                 onMouseUp={(e) => {
-                    const canvas = e.target as HTMLCanvasElement;
+                    const canvas = canvasElement.current;
+                    if (canvas === null) {
+                        return;
+                    }
                     const moveEnd: Vector2 = {
                         x: e.clientX - canvas.offsetLeft,
                         y: e.clientY - canvas.offsetTop
@@ -267,120 +347,21 @@ export default function Canvas({ tool, selectedObject, imageData }: CanvasProps)
                     if (tempObject != null) {
                         setupCursor(canvas, moveEnd, tempObject, setTempPoint);
                         if (tempObject.type !== Types.Area) {
-                            dispatch(replaceSelectedObject, tempObject, false);
+                            dispatch(actionReplaceSelectedObject(tempObject as TextObject | Rectangle | Triangle | Circle | Art));
                             setTempObject(null);
                         } else if (canvas.style.cursor === "default") {
                             setTempObject(null);
                         }
                     } else if (canvas.style.cursor === "default" && selectedObject != null) {
-                        dispatch(replaceSelectedObject, tempObject, true);
+                        dispatch(pushToHistory(imageData))
+                        const newEditor = replaceSelectedObject(editor, null);
+                        dispatch(setEditor(newEditor));
                     }
                     setCanvasDown(false);
                 }}>
             </canvas>
         </div >
     );
-}
-
-function createRectangle(downStart: Vector2, moveEnd: Vector2): Rectangle {
-    const start: Vector2 = {
-        x: Math.min(downStart.x, moveEnd.x),
-        y: Math.min(downStart.y, moveEnd.y)
-    };
-    const end = {
-        x: Math.max(downStart.x, moveEnd.x),
-        y: Math.max(downStart.y, moveEnd.y)
-    };
-    return {
-        type: Types.Rectangle,
-        position: start,
-        size: {
-            x: end.x - start.x,
-            y: end.y - start.y
-        },
-        props: {
-            fillColor: getFillColor(),
-            strokeColor: getStrokeColor(),
-            strokeWidth: getStrokeWidth()
-        }
-    }
-}
-
-function createTriangle(downStart: Vector2, moveEnd: Vector2): Triangle {
-    const start: Vector2 = {
-        x: Math.min(downStart.x, moveEnd.x),
-        y: downStart.y
-    };
-    const end = {
-        x: Math.max(downStart.x, moveEnd.x),
-        y: moveEnd.y
-    };
-    return {
-        type: Types.Triangle,
-        p0: {
-            x: start.x,
-            y: start.y,
-        },
-        p1: {
-            x: end.x,
-            y: start.y,
-        },
-        p2: {
-            x: start.x / 2 + end.x / 2,
-            y: end.y,
-        },
-        props: {
-            fillColor: getFillColor(),
-            strokeColor: getStrokeColor(),
-            strokeWidth: getStrokeWidth()
-        }
-    }
-}
-
-function createCircle(downStart: Vector2, moveEnd: Vector2): Circle {
-    const len = Math.sqrt(Math.pow(moveEnd.x - downStart.x, 2) + Math.pow(moveEnd.y - downStart.y, 2));
-    return {
-        type: Types.Circle,
-        position: {
-            x: downStart.x,
-            y: downStart.y
-        },
-        radius: len,
-        props: {
-            fillColor: getFillColor(),
-            strokeColor: getStrokeColor(),
-            strokeWidth: getStrokeWidth()
-        }
-    }
-}
-
-function createText(downStart: Vector2, moveEnd: Vector2): TextObject {
-    return {
-        type: Types.TextObject,
-        rectangle: createRectangle(downStart, moveEnd),
-        text: getText(),
-        textSize: getTextSize(),
-        textColor: getTextColor()
-    }
-}
-
-function createArea(downStart: Vector2, moveEnd: Vector2): SelectedArea {
-    const start: Vector2 = {
-        x: Math.min(downStart.x, moveEnd.x),
-        y: Math.min(downStart.y, moveEnd.y)
-    };
-    const end = {
-        x: Math.max(downStart.x, moveEnd.x),
-        y: Math.max(downStart.y, moveEnd.y)
-    };
-    return {
-        type: Types.Area,
-        position: start,
-        size: {
-            x: end.x - start.x,
-            y: end.y - start.y
-        },
-    }
 }
 
 function setupCursor(canvas: HTMLCanvasElement,
@@ -470,10 +451,9 @@ function pointInTriangle(p: Vector2, p0: Vector2, p1: Vector2, p2: Vector2) {
     return s >= 0 && t >= 0 && s + t <= D;
 }
 
-function renderCanvas(imageData: ImageData,
+function renderCanvas(canvas: HTMLCanvasElement, imageData: ImageData,
     selectedObject: Rectangle | Triangle | Circle | TextObject | Art | null = null,
     tempCanvasObject: Rectangle | Triangle | Circle | TextObject | Art | SelectedArea | null = null) {
-    const canvas = document.getElementById("canvas") as HTMLCanvasElement;
     if (canvas == null) {
         return;
     }

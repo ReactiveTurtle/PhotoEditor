@@ -1,26 +1,33 @@
 import {
-    Button, ClickAwayListener, createStyles, Grow, makeStyles, MenuItem,
+    ClickAwayListener, createStyles, Grow, IconButton, makeStyles, MenuItem,
     MenuList, Paper, Popper, Theme
 } from '@material-ui/core';
 import React from 'react';
 import { Filter } from '../../structures/Filter';
 import './FilterMenu.css';
+import FilterIcon from './FIltersIcon';
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
         button: {
-            backgroundColor: "#0091ea",
+            backgroundColor: "#9d46ff",
             color: "#FFFFFF",
             fontWeight: 600,
             fontFamily: "monospace",
             fontSize: "16px",
-            borderRadius: "16px",
-            padding: "8px 16px",
             margin: "8px",
+            padding: "16px",
+            width: "56px",
+            height: "56px",
             '&:hover': {
-                backgroundColor: "#0064b7"
+                backgroundColor: "#7200ca"
             }
         },
+        paper: {
+            marginTop: "4px",
+            backgroundColor: "#8eacbbbe",
+            color: "white",
+        }
     }),
 );
 
@@ -61,16 +68,14 @@ export default function FilterMenu(props: FilterMenuProps) {
     }, [open]);
     return (
         <div className="FiltersContainer">
-            <Button
+            <IconButton
+                edge="end"
                 className={classes.button}
                 ref={anchorRef}
-                aria-controls={open ? 'menu-list-grow' : undefined}
-                aria-haspopup="true"
                 onClick={handleToggle}
-                color="primary"
-                disableElevation>
-                Фильтры
-            </Button>
+                color="primary">
+                <FilterIcon></FilterIcon>
+            </IconButton>
             <div>
                 <Popper open={open} anchorEl={anchorRef.current} role={undefined} transition disablePortal>
                     {({ TransitionProps, placement }) => (
@@ -78,14 +83,14 @@ export default function FilterMenu(props: FilterMenuProps) {
                             {...TransitionProps}
                             style={{ transformOrigin: placement === 'bottom' ? 'center top' : 'center bottom' }}
                         >
-                            <Paper>
+                            <Paper className={classes.paper}>
                                 <ClickAwayListener onClickAway={handleClose}>
                                     <MenuList autoFocusItem={open} id="menu-list-grow" onKeyDown={handleListKeyDown}>
-                                        <MenuItem onClick={(e) => {props.onSelect(Filter.Grey); handleClose(e)}}>Серый</MenuItem>
-                                        <MenuItem onClick={(e) => {props.onSelect(Filter.Red); handleClose(e)}}>Красный</MenuItem>
-                                        <MenuItem onClick={(e) => {props.onSelect(Filter.Green); handleClose(e)}}>Зелёный</MenuItem>
-                                        <MenuItem onClick={(e) => {props.onSelect(Filter.Blue); handleClose(e)}}>Синий</MenuItem>
-                                        <MenuItem onClick={(e) => {props.onSelect(Filter.Brightness); handleClose(e)}}>Яркость</MenuItem>
+                                        <MenuItem onClick={(e) => { props.onSelect(Filter.Grey); handleClose(e) }}>Серый</MenuItem>
+                                        <MenuItem onClick={(e) => { props.onSelect(Filter.Red); handleClose(e) }}>Красный</MenuItem>
+                                        <MenuItem onClick={(e) => { props.onSelect(Filter.Green); handleClose(e) }}>Зелёный</MenuItem>
+                                        <MenuItem onClick={(e) => { props.onSelect(Filter.Blue); handleClose(e) }}>Синий</MenuItem>
+                                        <MenuItem onClick={(e) => { props.onSelect(Filter.Brightness); handleClose(e) }}>Яркость</MenuItem>
                                     </MenuList>
                                 </ClickAwayListener>
                             </Paper>

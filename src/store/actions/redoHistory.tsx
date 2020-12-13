@@ -1,0 +1,2 @@
+const REDO_HISTORY = "REDO_HISTORY";
+export default REDO_HISTORY;

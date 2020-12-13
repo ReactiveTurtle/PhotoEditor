@@ -1,12 +1,7 @@
-import React, { useState } from 'react';
-import './SelectSizePopup.css';
+import React from 'react';
 import '../../index.css';
-import { dispatch } from '../../statemanager/StateManager';
-import { Vector2 } from '../../structures/Vector2';
-import EditText from '../../edittext/EditText';
 import MuiDialogTitle from '@material-ui/core/DialogTitle';
 import MuiDialogContent from '@material-ui/core/DialogContent';
-import MuiDialogActions from '@material-ui/core/DialogActions';
 import CloseIcon from '@material-ui/icons/Close';
 import { Button, createStyles, Dialog, IconButton, Slide, Theme, Typography, withStyles, WithStyles } from '@material-ui/core';
 import { TransitionProps } from '@material-ui/core/transitions/transition';
@@ -32,12 +27,6 @@ export interface DialogTitleProps extends WithStyles<typeof styles> {
     id: string;
     children: React.ReactNode;
     onClose: () => void;
-}
-
-interface SelectSizeDialogProps {
-    applyText: string,
-    fun: Function,
-    children: JSX.Element
 }
 
 const DialogTitle = withStyles(styles)((props: DialogTitleProps) => {
@@ -67,62 +56,42 @@ const DialogContent = withStyles((theme: Theme) => ({
     },
 }))(MuiDialogContent);
 
-const DialogActions = withStyles((theme: Theme) => ({
-    root: {
-        margin: 0,
-        padding: theme.spacing(1),
-    },
-}))(MuiDialogActions);
+interface PasteArtDialogProps {
+    isOpen: boolean,
+    onSaveSize: Function,
+    onChangeSize: Function,
+    onClose: Function
+}
 
-export default function SelectSizeDialog(props: SelectSizeDialogProps) {
-    const [open, setOpen] = React.useState(false);
-    const [size] = useState<Vector2>({ x: 800, y: 600 });
-
-    const handleClickOpen = () => {
-        setOpen(true);
-    };
-    const handleClose = () => {
-        setOpen(false);
-    };
-
-    const handleCloseAndCreate = () => {
-        handleClose();
-        dispatch(props.fun, size);
-    };
-
+export default function PasteArtDialog(props: PasteArtDialogProps) {
     return (
         <div>
-            <IconButton
-                color="inherit"
-                onClick={handleClickOpen}>
-                {props.children}
-            </IconButton>
             <Dialog
                 TransitionComponent={Transition}
-                onClose={handleClose}
+                onClose={() => props.onClose()}
                 aria-labelledby="customized-dialog-title"
-                open={open}>
+                open={props.isOpen}>
                 <DialogTitle id="customized-dialog-title"
-                    onClose={handleClose}>
-                    Выберите размер
+                    onClose={() => props.onClose()}>
+                    Выберите действие
                 </DialogTitle>
                 <DialogContent dividers>
-                    <EditText title="Ширина" type="number"
-                        hintText="Введите значение"
-                        min="1"
-                        text={size.x + ""}
-                        onChange={(e) => size.x = parseInt(e.target.value)}></EditText>
-                    <EditText title="Высота" type="number"
-                        hintText="Введите значение"
-                        min="1"
-                        text={size.y + ""}
-                        onChange={(e) => size.y = parseInt(e.target.value)}></EditText>
-                </DialogContent>
-                <DialogActions>
-                    <Button autoFocus onClick={handleCloseAndCreate} color="primary">
-                        {props.applyText}
+                    <Button autoFocus onClick={() => {
+                        props.onSaveSize();
+                        props.onClose()
+                    }} color="primary">
+                        Сохранить размер полотна
                     </Button>
-                </DialogActions>
+                    <Button autoFocus onClick={() => {
+                        props.onChangeSize();
+                        props.onClose();
+                    }} color="primary">
+                        Изменить размер полотна
+                    </Button>
+                    <Button autoFocus onClick={() => props.onClose()} color="primary">
+                        Отмена
+                    </Button>
+                </DialogContent>
             </Dialog>
         </div>
     );

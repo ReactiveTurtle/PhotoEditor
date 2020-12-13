@@ -1,0 +1,2 @@
+const EDIT_CANVAS_SIZE = "EDIT_CANVAS_SIZE";
+export default EDIT_CANVAS_SIZE;
