@@ -7,28 +7,46 @@ import { Types } from "../structures/Type";
 import { Vector2 } from "../structures/Vector2";
 import { getRGB } from "./ColorHelper";
 
+
+export function drawImageData(context: CanvasRenderingContext2D,
+    imageData: ImageData) {
+    const canvas = document.createElement("canvas");
+    canvas.width = imageData.width;
+    canvas.height = imageData.height;
+    const ctx = canvas.getContext("2d");
+    if (ctx === null) {
+        throw new Error();
+    }
+    ctx.putImageData(imageData, 0, 0);
+    context.drawImage(canvas, 0, 0);
+    canvas.remove();
+}
+
 export function drawObject(
     context: CanvasRenderingContext2D,
     size: Vector2,
     selectedObject: TextObject | Rectangle | Triangle | Circle | Art
 ) {
     let newImageData: ImageData | undefined;
-
+    const canvasSize = {
+        x: size.x,
+        y: size.y
+    }
     switch (selectedObject.type) {
         case Types.Rectangle:
-            newImageData = drawRectangle(context, size, selectedObject as Rectangle);
+            newImageData = drawRectangle(context, canvasSize, selectedObject as Rectangle);
             break;
         case Types.Triangle:
-            newImageData = drawTriangle(context, size, selectedObject as Triangle);
+            newImageData = drawTriangle(context, canvasSize, selectedObject as Triangle);
             break;
         case Types.Circle:
-            newImageData = drawCircle(context, size, selectedObject as Circle);
+            newImageData = drawCircle(context,canvasSize, selectedObject as Circle);
             break;
         case Types.Art:
-            newImageData = drawArt(context, size, selectedObject as Art);
+            newImageData = drawArt(context, canvasSize, selectedObject as Art);
             break;
         case Types.TextObject:
-            newImageData = drawText(context, size, selectedObject as TextObject);
+            newImageData = drawText(context, canvasSize, selectedObject as TextObject);
             break;
     };
     context.globalAlpha = 1;
@@ -39,7 +57,7 @@ export function drawObject(
 }
 
 function drawRectangle(ctx: CanvasRenderingContext2D,
-    size: Vector2,
+    canvasSize: Vector2,
     rectangle: Rectangle
 ): ImageData | undefined {
     ctx.beginPath();
@@ -59,7 +77,7 @@ function drawRectangle(ctx: CanvasRenderingContext2D,
         ctx.strokeStyle = getRGB(rectangle.props.strokeColor);
         ctx.stroke();
     }
-    return ctx.getImageData(0, 0, size.x, size.y);
+    return ctx.getImageData(0, 0, canvasSize.x, canvasSize.y);
 }
 
 function drawTriangle(ctx: CanvasRenderingContext2D,
@@ -107,7 +125,8 @@ function drawCircle(ctx: CanvasRenderingContext2D,
     return ctx.getImageData(0, 0, size.x, size.y);
 }
 
-function drawArt(ctx: CanvasRenderingContext2D, size: Vector2, art: Art) {
+function drawArt(ctx: CanvasRenderingContext2D,
+    size: Vector2, art: Art) {
     const canvasCtx = document.createElement("canvas");
     canvasCtx.width = art.image.width;
     canvasCtx.height = art.image.height;

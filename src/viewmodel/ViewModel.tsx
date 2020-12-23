@@ -7,5 +7,5 @@ export type ViewModel = {
     editor: Editor,
     imageHistory: ImageHistory,
     currentTool: ToolType,
-    objectState: ObjectState
+    objectState: ObjectState,
 }

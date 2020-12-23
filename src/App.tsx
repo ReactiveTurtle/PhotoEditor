@@ -31,6 +31,9 @@ import applyFilter from './store/actionCreators/applyFilter';
 import createNewCanvas from './store/actionCreators/createNewCanvas';
 import { replaceSelectedObject } from './helper/EditorHelper';
 import { purple, red } from '@material-ui/core/colors';
+import ExportDialog from './components/exportdialog/ExportDialog';
+import ImportDialog from './components/importdialog/ImportDialog';
+import { ImportType } from './structures/ImportType';
 
 const theme = createMuiTheme({
     palette: {
@@ -103,7 +106,7 @@ function App() {
                         <Toolbar>
                             <Typography variant="h6" color="inherit" className={classes.title}>
                                 Reactive Photo Editor
-                        </Typography>
+                            </Typography>
                             <SelectSizePopup
                                 applyText="Создать"
                                 action={createNewCanvas({ x: 0, y: 0 })}>
@@ -120,33 +123,23 @@ function App() {
                                     <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
                                 </SvgIcon>
                             </SelectSizePopup>
-                            <IconButton aria-label="Загрузить"
-                                color="inherit"
-                                onClick={() => {
-                                    importObject((art: Art) => {
-                                        setPasteArt(art);
-                                        setPasteArtDialogOpen(true);
-                                    })
-                                }}>
-                                <SvgIcon>
-                                    <path d="M0 0h24v24H0z" fill="none" />
-                                    <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z" />
-                                </SvgIcon>
-                            </IconButton>
-                            <IconButton aria-label="Сохранить"
-                                color="inherit"
-                                edge="end"
-                                onClick={() => {
-                                    setTempEditor(editor);
-                                    dispatch(actionReplaceSelectedObject(null));
-                                    exportObject();
-                                    dispatch(setEditor(editor));
-                                }}>
-                                <SvgIcon>
-                                    <path d="M0 0h24v24H0z" fill="none" />
-                                    <path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2z" />
-                                </SvgIcon>
-                            </IconButton>
+                            <ImportDialog
+                                onApply={(type) => {
+                                    switch(type) {
+                                        case ImportType.STORAGE:
+                                            importObject((art: Art) => {
+                                                setPasteArt(art);
+                                                setPasteArtDialogOpen(true);
+                                            })
+                                            break;
+                                    }
+                                }}
+                            ></ImportDialog>
+                            <ExportDialog
+                                onApply={(format, quality) => {
+                                    const newEditor = replaceSelectedObject(editor, null);
+                                    exportObject(newEditor.canvas, format, quality);
+                                }}></ExportDialog>
                             {isPasteArtDialogOpen && <PasteArtDialog
                                 isOpen={isPasteArtDialogOpen}
                                 onSaveSize={() => {

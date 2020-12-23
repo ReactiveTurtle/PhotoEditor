@@ -24,8 +24,7 @@ export function replaceSelectedObject(
             if (ctx != null) {
                 console.log(ctx);
                 ctx.putImageData(editor.canvas, 0, 0);
-                newEditor.canvas = drawObject(ctx,
-                    { x: editor.canvas.width, y: editor.canvas.height },
+                newEditor.canvas = drawObject(ctx, { x: editor.canvas.width, y: editor.canvas.height },
                     editor.selectedObject);
             }
         }

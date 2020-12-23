@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { drawObject } from '../../helper/DrawHelper';
+import { drawImageData, drawObject } from '../../helper/DrawHelper';
 import './Canvas.css';
 import { Types } from '../../structures/Type';
 import { Vector2 } from '../../structures/Vector2';
@@ -24,8 +24,17 @@ import actionReplaceSelectedObject from '../../store/actionCreators/actionReplac
 import { DrawProps } from '../../structures/DrawProps';
 import { replaceSelectedObject } from '../../helper/EditorHelper';
 import setEditor from '../../store/actionCreators/setEditor';
+import { useTimeout } from '../timeout/Timeout';
 
 export default function Canvas() {
+    const timeout = useTimeout();
+
+    const [isMiddleMouseDown, setMiddleMouseDown] = useState<boolean>(false);
+    const [middleMouseStart, setMiddleMouseStart] = useState<Vector2>({ x: 0, y: 0 });
+
+    const [position, setPosition] = useState<Vector2>({ x: 0, y: 0 });
+    const [scale, setScale] = useState<number>(1);
+
     const [isCanvasDown, setCanvasDown] = useState(false);
     const [tempObject, setTempObject] = useState<Rectangle | Triangle | Circle | TextObject | Art | SelectedArea | null>(null);
     const [tempPoint, setTempPoint] = useState<Vector2 | null>(null);
@@ -67,12 +76,68 @@ export default function Canvas() {
         }
     }
 
+    const canvasContainer = useRef<HTMLDivElement>(null);
     const canvasElement = useRef<HTMLCanvasElement>(null);
     useEffect(() => {
-        if (canvasElement.current != null) {
-            renderCanvas(canvasElement.current, imageData, selectedObject, tempObject);
+        if (canvasElement.current !== null && canvasContainer.current !== null) {
+            canvasElement.current.width = Math.min(imageData.width * scale, canvasContainer.current.clientWidth);
+            canvasElement.current.height = Math.min(imageData.height * scale, canvasContainer.current.clientHeight);
+            if (canvasElement.current != null) {
+                renderCanvas(canvasElement.current, scale, imageData, selectedObject, tempObject);
+            }
         }
-    }, [imageData, selectedObject, tempObject]);
+
+        const wheelListener = (e: WheelEvent) => {
+            const delta = Math.sign(e.deltaY);
+            const newScale = Math.max(0.2, scale + delta * -0.1);
+            setScale(newScale);
+        }
+        window.addEventListener("wheel", wheelListener);
+
+        const mouseDownListener = (e: MouseEvent) => {
+            if (e.button === 1) {
+                document.body.style.cursor = "move"
+                if (canvasElement.current !== null) {
+                    canvasElement.current.style.cursor = "move"
+                }
+                setMiddleMouseDown(true);
+                setMiddleMouseStart({ x: e.clientX, y: e.clientY })
+            }
+        };
+        window.addEventListener("mousedown", mouseDownListener)
+
+        const mouseMoveListener = (e: MouseEvent) => {
+            if (isMiddleMouseDown && canvasElement.current !== null) {
+                setPosition({
+                    x: position.x + (e.clientX - middleMouseStart.x) / 2,
+                    y: position.y + (e.clientY - middleMouseStart.y) / 2
+                });
+                canvasElement.current.style.marginLeft = `${position.x}px`;
+                canvasElement.current.style.marginTop = `${position.y}px`;
+                setMiddleMouseStart({ x: e.clientX, y: e.clientY })
+            }
+        };
+        window.addEventListener("mousemove", mouseMoveListener);
+
+        const mouseUpListener = (e: MouseEvent) => {
+            if (e.button === 1) {
+                setMiddleMouseDown(false);
+                document.body.style.cursor = "default";
+                if (canvasElement.current !== null) {
+                    canvasElement.current.style.cursor = "default"
+                }
+            }
+        };
+        window.addEventListener("mouseup", mouseUpListener);
+        return () => {
+            window.removeEventListener("wheel", wheelListener);
+            window.removeEventListener("mousedown", mouseDownListener);
+            window.removeEventListener("mousemove", mouseMoveListener);
+            window.removeEventListener("mouseup", mouseUpListener);
+        }
+    }, [timeout, middleMouseStart, setMiddleMouseStart,
+        isMiddleMouseDown, position, scale,
+        imageData, selectedObject, tempObject]);
     useEffect(() => {
         const listener = (e: KeyboardEvent) => {
             if (e.ctrlKey) {
@@ -111,7 +176,8 @@ export default function Canvas() {
                         break;
                     case "Enter":
                         if (tempObject != null && tempObject.type === Types.Area) {
-                            dispatch(selectArea(tempObject as SelectedArea));
+                            const area = tempObject as SelectedArea;
+                            dispatch(selectArea(area));
                         } else {
                             const historyCanvas = editor.canvas;
                             dispatch(actionReplaceSelectedObject(null));
@@ -126,11 +192,11 @@ export default function Canvas() {
         return () => {
             window.removeEventListener("keydown", listener)
         }
+
     })
     const onCreateObject = (start: Vector2, moveEnd: Vector2) => {
         if (isCanvasDown) {
             let newObject = null;
-            console.log(tool)
             switch (tool) {
                 case ToolType.Rectangle:
                     newObject = createRectangle(start, moveEnd, objectState);
@@ -152,15 +218,18 @@ export default function Canvas() {
         }
     }
     return (
-        <div className="Canvas-container">
+        <div
+            ref={canvasContainer}
+            className="Canvas-container">
             <canvas id="canvas"
                 ref={canvasElement}
                 className="Canvas"
-                width={imageData.width}
-                height={imageData.height}
+                width={0}
+                height={0}
+                style={{ marginLeft: position.x, marginTop: position.y }}
                 onMouseDown={(e) => {
                     const canvas = canvasElement.current;
-                    if (canvas === null) {
+                    if (canvas === null || isMiddleMouseDown) {
                         return;
                     }
                     if (canvas.style.cursor === "pointer") {
@@ -206,7 +275,7 @@ export default function Canvas() {
                 }}
                 onMouseMove={(e) => {
                     const canvas = canvasElement.current;
-                    if (canvas === null) {
+                    if (canvas === null || isMiddleMouseDown) {
                         return;
                     }
                     const moveEnd: Vector2 = {
@@ -219,8 +288,8 @@ export default function Canvas() {
                             dispatch(pushToHistory(newEditor.canvas));
                             dispatch(setEditor(newEditor));
                         }
-                        let deltaX = moveEnd.x - start.x;
-                        let deltaY = moveEnd.y - start.y;
+                        let deltaX = (moveEnd.x - start.x) / scale;
+                        let deltaY = (moveEnd.y - start.y) / scale;
                         if (canvas.style.cursor === "pointer") {
                             if (tempObject !== null) {
                                 if (tempPoint !== null) {
@@ -292,7 +361,7 @@ export default function Canvas() {
                             }
                             setStart(moveEnd)
                             if (canvasElement.current != null) {
-                                renderCanvas(canvasElement.current, imageData, null, tempObject);
+                                renderCanvas(canvasElement.current, scale, imageData, null, tempObject);
                             }
                         } else if (canvas.style.cursor === "grabbing") {
                             if (tempObject != null) {
@@ -321,16 +390,17 @@ export default function Canvas() {
                             }
                             setStart(moveEnd)
                             if (canvasElement.current != null) {
-                                renderCanvas(canvasElement.current, imageData, null, tempObject);
+                                renderCanvas(canvasElement.current, scale, imageData, null, tempObject);
                             }
                         } else {
-                            onCreateObject(start, moveEnd);
+                            onCreateObject({ x: start.x / scale, y: start.y / scale },
+                                { x: moveEnd.x / scale, y: moveEnd.y / scale });
                         }
                     } else {
                         if (selectedObject === null && tempObject !== null && tempObject.type === Types.Area) {
-                            setupCursor(canvas, moveEnd, tempObject, setTempPoint);
+                            setupCursor(canvas, scale, moveEnd, tempObject, setTempPoint);
                         } else {
-                            setupCursor(canvas, moveEnd, selectedObject, setTempPoint);
+                            setupCursor(canvas, scale, moveEnd, selectedObject, setTempPoint);
                         }
                         setStart(moveEnd)
                     }
@@ -345,7 +415,7 @@ export default function Canvas() {
                         y: e.clientY - canvas.offsetTop
                     };
                     if (tempObject != null) {
-                        setupCursor(canvas, moveEnd, tempObject, setTempPoint);
+                        setupCursor(canvas, scale, moveEnd, tempObject, setTempPoint);
                         if (tempObject.type !== Types.Area) {
                             dispatch(actionReplaceSelectedObject(tempObject as TextObject | Rectangle | Triangle | Circle | Art));
                             setTempObject(null);
@@ -365,6 +435,7 @@ export default function Canvas() {
 }
 
 function setupCursor(canvas: HTMLCanvasElement,
+    scale: number,
     moveEnd: Vector2,
     selectedObject: Rectangle | Triangle | Circle | TextObject | Art | SelectedArea | null = null,
     setTempPoint: Function) {
@@ -379,8 +450,14 @@ function setupCursor(canvas: HTMLCanvasElement,
             } else {
                 objRA = selectedObject as Rectangle | Art | SelectedArea;
             }
-            const position = objRA.position;
-            let size: Vector2 = objRA.size;
+            const position = {
+                x: objRA.position.x * scale,
+                y: objRA.position.y * scale,
+            };
+            let size: Vector2 = {
+                x: objRA.size.x * scale,
+                y: objRA.size.y * scale,
+            };
 
             const points = [
                 { x: position.x, y: position.y }, // Left Top
@@ -412,23 +489,32 @@ function setupCursor(canvas: HTMLCanvasElement,
         } else if (selectedObject.type === Types.Triangle) {
             const triangle = selectedObject as Triangle;
             const points = [triangle.p0, triangle.p1, triangle.p2];
-            const pointIndex = points
+            const scaledPoints = [
+                { x: triangle.p0.x * scale, y: triangle.p0.y * scale },
+                { x: triangle.p1.x * scale, y: triangle.p1.y * scale },
+                { x: triangle.p2.x * scale, y: triangle.p2.y * scale }];
+            const pointIndex = scaledPoints
                 .map((p) => length({ x: p.x - moveEnd.x, y: p.y - moveEnd.y }) <= 12)
                 .findIndex((value) => value);
             if (pointIndex > -1) {
                 setTempPoint(points[pointIndex]);
                 canvas.style.cursor = "pointer";
-            } else if (pointInTriangle(moveEnd, triangle.p0, triangle.p1, triangle.p2)) {
+            } else if (pointInTriangle(moveEnd, scaledPoints[0], scaledPoints[1], scaledPoints[2])) {
                 canvas.style.cursor = "grab";
             } else {
                 canvas.style.cursor = "default";
             }
         } else if (selectedObject.type === Types.Circle) {
             const circle = selectedObject as Circle;
-            const distance = length({ x: moveEnd.x - circle.position.x, y: moveEnd.y - circle.position.y });
-            if (distance >= circle.radius - 12 && distance <= circle.radius + 12) {
+            const position = {
+                x: circle.position.x * scale,
+                y: circle.position.y * scale,
+            };
+            const radius = circle.radius * scale;
+            const distance = length({ x: moveEnd.x - position.x, y: moveEnd.y - position.y });
+            if (distance >= radius - 12 && distance <= radius + 12) {
                 canvas.style.cursor = "pointer";
-            } else if (length({ x: moveEnd.x - circle.position.x, y: moveEnd.y - circle.position.y }) < Math.max(circle.radius - 12, 0)) {
+            } else if (length({ x: moveEnd.x - position.x, y: moveEnd.y - position.y }) < Math.max(radius - 12, 0)) {
                 canvas.style.cursor = "grab";
             } else {
                 canvas.style.cursor = "default";
@@ -451,7 +537,7 @@ function pointInTriangle(p: Vector2, p0: Vector2, p1: Vector2, p2: Vector2) {
     return s >= 0 && t >= 0 && s + t <= D;
 }
 
-function renderCanvas(canvas: HTMLCanvasElement, imageData: ImageData,
+function renderCanvas(canvas: HTMLCanvasElement, scale: number, imageData: ImageData,
     selectedObject: Rectangle | Triangle | Circle | TextObject | Art | null = null,
     tempCanvasObject: Rectangle | Triangle | Circle | TextObject | Art | SelectedArea | null = null) {
     if (canvas == null) {
@@ -459,19 +545,21 @@ function renderCanvas(canvas: HTMLCanvasElement, imageData: ImageData,
     }
     const context = canvas.getContext("2d");
     if (context != null) {
-        context.putImageData(imageData, 0, 0);
+        context.scale(scale, scale);
+        drawImageData(context, imageData);
         if (selectedObject != null) {
             context.putImageData(drawObject(context, { x: imageData.width, y: imageData.height }, selectedObject), 0, 0);
-            drawBorder(selectedObject, context);
+            drawBorder(scale, selectedObject, context);
         }
         if (tempCanvasObject != null) {
             if (tempCanvasObject.type !== Types.Area) {
                 const objRTCTA = tempCanvasObject as Rectangle | Triangle | Circle | TextObject | Art;
                 context.putImageData(drawObject(context, { x: imageData.width, y: imageData.height }, objRTCTA), 0, 0);
             } else {
-                drawBorder(tempCanvasObject as SelectedArea, context);
+                drawBorder(scale, tempCanvasObject as SelectedArea, context);
             }
         }
+        context.scale(1 / scale, 1 / scale);
     }
 }
 
@@ -486,8 +574,8 @@ function createGradient(ctx: CanvasRenderingContext2D, position: Vector2, size: 
     return grad;
 }
 
-function drawBorder(obj: Rectangle | Triangle | Circle | TextObject | Art | SelectedArea, ctx: CanvasRenderingContext2D) {
-    ctx.lineWidth = 2;
+function drawBorder(scale: number, obj: Rectangle | Triangle | Circle | TextObject | Art | SelectedArea, ctx: CanvasRenderingContext2D) {
+    ctx.lineWidth = 2 / scale;
 
     if (obj.type === Types.Rectangle
         || obj.type === Types.TextObject
@@ -502,8 +590,14 @@ function drawBorder(obj: Rectangle | Triangle | Circle | TextObject | Art | Sele
         if (obj.type === Types.Area) {
             ctx.setLineDash([3, 4]);
         }
-        let position = objRA.position;
-        let size = objRA.size;
+        let position = {
+            x: objRA.position.x,
+            y: objRA.position.y
+        };
+        let size = {
+            x: objRA.size.x,
+            y: objRA.size.y
+        };
         ctx.beginPath();
         const normY = Math.min(position.y + size.y, position.y);
         ctx.moveTo(
@@ -522,7 +616,7 @@ function drawBorder(obj: Rectangle | Triangle | Circle | TextObject | Art | Sele
             position.x - ctx.lineWidth,
             normY - ctx.lineWidth);
         ctx.closePath();
-        ctx.strokeStyle = createGradient(ctx, position, objRA.size);
+        ctx.strokeStyle = createGradient(ctx, position, size);
         ctx.fillStyle = ctx.strokeStyle;
         ctx.stroke();
 
@@ -548,15 +642,15 @@ function drawBorder(obj: Rectangle | Triangle | Circle | TextObject | Art | Sele
             ctx.arc(
                 item.x,
                 item.y,
-                radius,
+                radius / scale,
                 0,
                 2 * Math.PI,
                 false
             );
+            ctx.closePath();
             ctx.fill();
             ctx.strokeStyle = "#424242"
             ctx.stroke();
-            ctx.closePath();
         });
     } else if (obj.type === Types.Triangle) {
         const triangle = obj as Triangle;
@@ -592,7 +686,7 @@ function drawBorder(obj: Rectangle | Triangle | Circle | TextObject | Art | Sele
             ctx.arc(
                 item.x,
                 item.y,
-                radius,
+                radius / scale,
                 0,
                 2 * Math.PI,
                 false

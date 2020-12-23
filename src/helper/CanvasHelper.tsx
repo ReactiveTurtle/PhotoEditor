@@ -1,5 +1,6 @@
 import { Art } from '../structures/Art';
 import { Editor } from '../structures/Editor'
+import { ExportFormat, formatToString } from '../structures/ExportFormat';
 import { SelectedArea } from '../structures/SelectedArea';
 import { Types } from '../structures/Type';
 import { Vector2 } from '../structures/Vector2'
@@ -126,11 +127,19 @@ export function importObject(callback: Function): void {
 	}
 }
 
-export function exportObject() {
-	var canvas = document.getElementById("canvas") as HTMLCanvasElement;
+export function exportObject(imageData: ImageData, format: ExportFormat, quality: number) {
+	const formatString = formatToString(format);
+	var canvas = document.createElement("canvas");
+	canvas.width = imageData.width;
+	canvas.height = imageData.height;
 	if (canvas == null) {
 		return;
 	}
+	const ctx = canvas.getContext("2d");
+	if (ctx == null) {
+		return;
+	}
+	ctx.putImageData(imageData, 0, 0);
 	canvas.toBlob(
 		function (blob) {
 			if (blob == null) {
@@ -139,12 +148,13 @@ export function exportObject() {
 			const url = window.URL.createObjectURL(new Blob([blob]));
 			const link = document.createElement("a");
 			link.href = url;
-			link.setAttribute("download", "image.png");
+			link.setAttribute("download", `image.${formatString}`);
 			document.body.appendChild(link);
 			link.click();
 			link.remove();
+			canvas.remove();
 		},
-		"image/png",
-		0.9
+		`image/${formatString}`,
+		quality / 100
 	);
 }
