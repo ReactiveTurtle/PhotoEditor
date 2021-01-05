@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import './App.css';
+import styles from './App.module.css';
 import SelectSizePopup from './components/selectsizepopup/SelectSizeDialog';
 import Canvas from './components/canvas/Canvas';
 import ObjectParams from './objectparams/ObjectParams';
@@ -7,7 +7,7 @@ import { exportObject, importObject } from './helper/CanvasHelper';
 import './structures/Vector2';
 import Tools, { ToolType } from './components/tool/Tools';
 import { Editor } from './structures/Editor';
-import { AppBar, Box, IconButton, SvgIcon, Toolbar, Typography } from '@material-ui/core';
+import { AppBar, Box, SvgIcon, Toolbar, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, ThemeProvider } from '@material-ui/core/styles';
 
 import { createMuiTheme } from '@material-ui/core/styles';
@@ -65,8 +65,10 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 function App() {
+    const classes = useStyles();
     const timeout = useTimeout();
     const dispatch = useDispatch();
+
     const editor: Editor = useSelector(
         (state: ViewModel) => state.editor,
         shallowEqual
@@ -74,10 +76,9 @@ function App() {
     const currentTool: ToolType = useSelector(
         (state: ViewModel) => state.currentTool
     )
+    
     const [isBrightSliderShown, setBrightSliderShown] = useState(false);
     const [tempEditor, setTempEditor] = useState<Editor | null>(null);
-    const classes = useStyles();
-
     const [isPasteArtDialogOpen, setPasteArtDialogOpen] = useState(false);
     const [pasteArt, setPasteArt] = useState<Art | null>(null);
 
@@ -97,7 +98,7 @@ function App() {
         }
     })
     return (
-        <div className="App"
+        <div className={styles.App}
             id="App">
             <ThemeProvider theme={theme}>
                 <Canvas></Canvas>

@@ -18,12 +18,25 @@ const initialViewModel: ViewModel = {
     },
     currentTool: ToolType.Rectangle,
     objectState: {
-        fillColor: toRGBAColor("#FF00CCCC"),
-        strokeColor: toRGBAColor("#FFCC0000"),
+        fillColor: toRGBAColor("#00CCCCFF"),
+        strokeColor: toRGBAColor("#CC0000FF"),
         strokeWidth: 4,
         text: "",
         textSize: 24,
-        textColor: toRGBAColor("#FF424242")
+        textColor: toRGBAColor("#424242FF")
+    },
+    canvasModel: {
+        isCanvasDown: false,
+        start: {x: 0, y: 0},
+        tempObject: null,
+        isMiddleMouseDown: false,
+        middleMouseStart: {x: 0, y: 0},
+        tempPoint: null,
+        scale: 1,
+        canvasPosition: {
+            x: (window.innerWidth - defaultEditor.canvas.width) / 2,
+            y: (window.innerHeight - defaultEditor.canvas.height) / 2
+        }
     }
 }
 

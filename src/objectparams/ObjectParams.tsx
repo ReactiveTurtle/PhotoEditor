@@ -6,7 +6,6 @@ import EditText from '../edittext/EditText';
 import updateFillColor from '../store/actionCreators/updateFillColor';
 import updateStrokeColor from '../store/actionCreators/updateStrokeColor';
 import updateStrokeWidth from '../store/actionCreators/updateStrokeWidth';
-import updateText from '../store/actionCreators/updateText';
 import updateTextColor from '../store/actionCreators/updateTextColor';
 import updateTextSize from '../store/actionCreators/updateTextSize';
 import initialViewModel from '../store/initialState';
@@ -47,15 +46,6 @@ function ObjectParams() {
                     }}></EditText>
             </div>
             <div className="ParamsList">
-                {tool === ToolType.Text
-                    && <textarea
-                        id="EditText-text"
-                        title="Текст"
-                        defaultValue={initialViewModel.objectState.text}
-                        onChange={(e) => {
-                            dispatch(updateText(e.target.value))
-                        }}></textarea>
-                }
                 {tool === ToolType.Text
                     && <EditText
                         id="EditText-textSize"

@@ -27,6 +27,8 @@ import UNDO_HISTORY from "../actions/undoHistory";
 import UPDATE_TOOL from "../actions/updateTool";
 import updateEditor from "./updateEditor";
 import updateObjectState from "./updateObjectState";
+import UPDATE_CANVAS_VIEW_MODEL from "../actions/updateCanvasViewModel";
+import CanvasViewModelAction from "../actions/types/CanvasViewModelAction";
 
 const reducers: Reducer<ViewModel | undefined,
     EditorAction |
@@ -36,6 +38,7 @@ const reducers: Reducer<ViewModel | undefined,
     RGBAColorAction |
     NumberAction |
     StringAction |
+    CanvasViewModelAction |
     Action> =
     (state, action): ViewModel => {
         if (state === undefined) {
@@ -98,6 +101,11 @@ const reducers: Reducer<ViewModel | undefined,
                     ...state,
                     editor: removeSelectedObject(editor)
                 };
+            case UPDATE_CANVAS_VIEW_MODEL:
+                return {
+                    ...state,
+                    canvasModel: (action as CanvasViewModelAction).value
+                }
             default:
                 const updatedEditor = updateEditor(state.editor, action as SelectedObjectAction | Vector2Action);
                 if (updatedEditor === undefined) {
@@ -111,7 +119,8 @@ const reducers: Reducer<ViewModel | undefined,
                     editor: updatedEditor,
                     imageHistory: state.imageHistory,
                     currentTool: state.currentTool,
-                    objectState: objectState
+                    objectState: objectState,
+                    canvasModel: state.canvasModel
                 }
         }
     }

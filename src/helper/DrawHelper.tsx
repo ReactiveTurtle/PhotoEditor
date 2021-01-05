@@ -6,7 +6,7 @@ import { Triangle } from "../structures/Triangle";
 import { Types } from "../structures/Type";
 import { Vector2 } from "../structures/Vector2";
 import { getRGB } from "./ColorHelper";
-
+import canvasTxt from 'canvas-txt';
 
 export function drawImageData(context: CanvasRenderingContext2D,
     imageData: ImageData) {
@@ -40,7 +40,7 @@ export function drawObject(
             newImageData = drawTriangle(context, canvasSize, selectedObject as Triangle);
             break;
         case Types.Circle:
-            newImageData = drawCircle(context,canvasSize, selectedObject as Circle);
+            newImageData = drawCircle(context, canvasSize, selectedObject as Circle);
             break;
         case Types.Art:
             newImageData = drawArt(context, canvasSize, selectedObject as Art);
@@ -151,11 +151,19 @@ function drawArt(ctx: CanvasRenderingContext2D,
 function drawText(ctx: CanvasRenderingContext2D,
     size: Vector2,
     text: TextObject) {
-    ctx.font = `${text.textSize}px monospace`;
     drawRectangle(ctx, size, text.rectangle);
-    ctx.globalAlpha = text.textColor.a;
+    //ctx.globalAlpha = text.textColor.a;
     ctx.fillStyle = getRGB(text.textColor);
-    ctx.fillText(text.text, text.rectangle.position.x + 2,
-        text.rectangle.position.y + text.textSize);
+
+    canvasTxt.fontSize = text.textSize;
+    canvasTxt.font = "monospace";
+    canvasTxt.align = "left";
+    canvasTxt.vAlign = "top";
+    canvasTxt.lineHeight = text.textSize * 1.15;
+    console.log(text);
+    canvasTxt.drawText(ctx, text.text,
+        text.rectangle.position.x + 2, text.rectangle.position.y,
+        text.rectangle.size.x, text.rectangle.size.y);
+
     return ctx.getImageData(0, 0, size.x, size.y);
 }
