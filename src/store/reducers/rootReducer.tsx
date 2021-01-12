@@ -81,9 +81,11 @@ const reducers: Reducer<ViewModel | undefined,
                     editor: newEditor
                 }
             case SELECT_AREA:
+                const area = selectArea(editor, (action as SelectedAreaAction).value);
+                console.log(area);
                 return {
                     ...state,
-                    editor: selectArea(editor, (action as SelectedAreaAction).value)
+                    editor: area
                 }
             case CUT_SELECTED_AREA:
                 return {

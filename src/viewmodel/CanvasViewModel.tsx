@@ -14,6 +14,5 @@ export type CanvasViewModel = {
     middleMouseStart: Vector2,
     tempPoint: Vector2 | null,
     scale: number,
-
     canvasPosition: Vector2
 }

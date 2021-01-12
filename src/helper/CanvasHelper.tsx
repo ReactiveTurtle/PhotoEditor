@@ -5,6 +5,27 @@ import { SelectedArea } from '../structures/SelectedArea';
 import { Types } from '../structures/Type';
 import { Vector2 } from '../structures/Vector2'
 
+export function scaleImageData(imageData: ImageData, newSize: Vector2) {
+	const canvas = document.createElement("canvas");
+	canvas.width = imageData.width;
+	canvas.height = imageData.height;
+	const ctx = canvas.getContext("2d");
+	if (ctx === null) {
+		throw new Error();
+	}
+	ctx.putImageData(imageData, 0, 0);
+	const dstCanvas = document.createElement("canvas");
+	dstCanvas.width = newSize.x;
+	dstCanvas.height = newSize.y;
+	const dstCtx = canvas.getContext("2d");
+	if (dstCtx === null) {
+		throw new Error();
+	}
+	dstCtx.scale(newSize.x / imageData.width, newSize.y / imageData.height)
+	dstCtx.drawImage(canvas, 0, 0);
+	return dstCtx.getImageData(0, 0, newSize.x, newSize.y);
+}
+
 export function copyImageData(imageData: ImageData) {
 	const newImageData: ImageData = new ImageData(
 		imageData.width,
@@ -60,17 +81,26 @@ export function selectArea(editor: Editor, selectedArea: SelectedArea): Editor {
 	let art: Art = {
 		type: Types.Art,
 		image: new ImageData(selectedArea.size.x, selectedArea.size.y),
-		position: selectedArea.position,
-		size: selectedArea.size,
+		position: {
+			x: Math.round(selectedArea.position.x),
+			y: Math.round(selectedArea.position.y)
+		},
+		size: {
+			x: Math.round(selectedArea.size.x),
+			y: Math.round(selectedArea.size.y)
+		},
+		rotation: 0
 	};
 	const newCanvas = copyImageData(editor.canvas);
 	for (let i = 0; i < art.size.y; i++) {
+		const dstY = i * art.size.x;
+		const srcY = (i + art.position.y) * newCanvas.width;
 		for (let j = 0; j < art.size.x; j++) {
-			let dstIndex = (i * art.size.x + j) * 4;
+			let dstIndex = (dstY + j) * 4;
 			let srcIndex =
-				((i + art.position.y) * newCanvas.width + j + art.position.x) * 4;
+				(srcY + j + art.position.x) * 4;
 			for (let k = 0; k < 4; k++) {
-				art.image.data[dstIndex + k] = editor.canvas.data[srcIndex + k];
+				art.image.data[dstIndex + k] = newCanvas.data[srcIndex + k];
 			}
 			newCanvas.data[srcIndex + 3] = 0;
 		}
@@ -83,7 +113,52 @@ export function selectArea(editor: Editor, selectedArea: SelectedArea): Editor {
 	return newEditor;
 }
 
-export function importObject(callback: Function): void {
+export function importImageUrl(url: string, onResult: (art: Art) => void, onProgress?: (percentage: number) => void) {
+	const request = new XMLHttpRequest();
+	if (onProgress !== undefined) {
+		request.onprogress = function (e) {
+			onProgress((e.loaded / e.total) * 100);
+		};
+	}
+	request.onload = function () {
+		const img = new Image();
+		var blob = new Blob([this.response]);
+		img.onload = () => {
+			URL.revokeObjectURL(img.src);
+			const canvas = document.createElement("canvas");
+			canvas.width = img.clientWidth;
+			canvas.height = img.clientHeight;
+			const ctx = canvas.getContext("2d");
+			if (ctx !== null) {
+				ctx.drawImage(img, 0, 0);
+				const art: Art = {
+					type: Types.Art,
+					image: ctx.getImageData(0, 0, img.width, img.height),
+					position: {
+						x: 0,
+						y: 0
+					},
+					size: {
+						x: img.width,
+						y: img.height
+					},
+					rotation: 0,
+				}
+				onResult(art);
+			}
+			canvas.remove();
+			img.remove();
+		}
+		img.src = window.URL.createObjectURL(blob);
+		document.body.appendChild(img);
+	};
+	request.responseType = 'arraybuffer';
+	request.overrideMimeType('text/plain; charset=x-user-defined');
+	request.open('GET', url, true);
+	request.send();
+}
+
+export function importObject(onResult: (art: Art) => void, onProgress?: (percentage: number) => void): void {
 	if (document !== null) {
 		const input = document.createElement("input") as HTMLInputElement;
 		input.type = "file";
@@ -93,34 +168,8 @@ export function importObject(callback: Function): void {
 				const inputElement = e.target as HTMLInputElement;
 				if (inputElement.files != null) {
 					var file = inputElement.files[0];
-					const url = URL.createObjectURL(file),
-						img = new Image();
-
-					img.onload = function () {
-						URL.revokeObjectURL(img.src);
-						const canvas = document.createElement("canvas");
-						canvas.width = img.width;
-						canvas.height = img.height;
-						const ctx = canvas.getContext("2d");
-						if (ctx !== null) {
-							ctx.drawImage(img, 0, 0);
-							const art: Art = {
-								type: Types.Art,
-								image: ctx.getImageData(0, 0, img.width, img.height),
-								position: {
-									x: 0,
-									y: 0
-								},
-								size: {
-									x: img.width,
-									y: img.height
-								}
-							}
-							callback(art);
-						}
-						canvas.remove();
-					};
-					img.src = url;
+					const url = URL.createObjectURL(file);
+					importImageUrl(url, onResult, onProgress);
 				}
 			};
 		}

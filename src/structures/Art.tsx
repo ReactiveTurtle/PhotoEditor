@@ -6,4 +6,5 @@ export type Art = {
 	image: ImageData;
 	position: Vector2;
 	size: Vector2;
+    rotation: number;
 };

@@ -6,5 +6,7 @@ export type ObjectState = {
     strokeWidth: number,
     text: string,
     textSize: number,
-    textColor: RGBAColor
+    textColor: RGBAColor,
+    fontName: string
+    padding: number
 }

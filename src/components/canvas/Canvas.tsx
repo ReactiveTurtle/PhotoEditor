@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { drawImageData, drawObject } from '../../helper/DrawHelper';
 import './Canvas.css';
 import { Types } from '../../structures/Type';
@@ -25,9 +25,12 @@ import { CanvasViewModel } from '../../viewmodel/CanvasViewModel';
 import updateCanvasViewModel from '../../store/actionCreators/updateCanvasViewModel';
 import updateText from '../../store/actionCreators/updateText';
 import { toHexColor } from '../../helper/ColorHelper';
-import { useTimeout } from '../timeout/Timeout';
 
-export default function Canvas() {
+interface CanvasProps {
+    focused: boolean;
+}
+
+export default function Canvas({ focused }: CanvasProps) {
     const dispatch = useDispatch();
 
     const state: ViewModel = useSelector(
@@ -45,10 +48,7 @@ export default function Canvas() {
     )
     const imageData = editor.canvas;
 
-    const [position, setPosition] = useState<Vector2>({
-        x: (window.innerWidth - imageData.width) / 2,
-        y: (window.innerHeight - imageData.height) / 2
-    });
+    const position = canvasViewModel.canvasPosition;
 
     if (selectedObject != null) {
         if (selectedObject.type === Types.Rectangle ||
@@ -76,25 +76,42 @@ export default function Canvas() {
     useEffect(() => {
         const scale = canvasViewModel.scale;
         if (canvasElement.current !== null && canvasContainer.current !== null) {
-            canvasElement.current.width = Math.min(imageData.width * scale, canvasContainer.current.clientWidth);
-            canvasElement.current.height = Math.min(imageData.height * scale, canvasContainer.current.clientHeight);
+            canvasElement.current.width = imageData.width * scale;
+            canvasElement.current.height = imageData.height * scale;
             if (canvasElement.current != null) {
                 renderCanvas(canvasElement.current, scale, imageData, selectedObject, canvasViewModel.tempObject);
             }
         }
-
-        const powFactor = 1.125;
+    })
+    useEffect(() => {
+        if (!focused) {
+            return;
+        }
+        const scale = canvasViewModel.scale;
+        const zoomIntensity = 0.1;
         const wheelListener = (e: WheelEvent) => {
-            const delta = Math.sign(e.deltaY);
             let newScale = scale;
-            if (delta === 1) {
-                newScale /= powFactor;
-            } else {
-                newScale *= powFactor;
+
+            // Идеальная формула для масштабирования :)
+            const scroll = e.deltaY < 0 ? 1 : -2;
+            const zoom = Math.exp(scroll * zoomIntensity);
+            newScale *= zoom;
+            if (newScale > 4) {
+                newScale = scale;
             }
 
-            canvasViewModel.scale = newScale;
-            dispatch(updateCanvasViewModel(canvasViewModel));
+            const newX = canvasViewModel.canvasPosition.x - (e.clientX / scale - canvasViewModel.canvasPosition.x / scale) * (newScale - scale)
+            const newY = canvasViewModel.canvasPosition.y - (e.clientY / scale - canvasViewModel.canvasPosition.y / scale) * (newScale - scale)
+
+            const newCanvasViewModel = {
+                ...canvasViewModel,
+                canvasPosition: {
+                    x: newX,
+                    y: newY,
+                },
+                scale: newScale
+            }
+            dispatch(updateCanvasViewModel(newCanvasViewModel));
         }
         window.addEventListener("wheel", wheelListener);
 
@@ -113,7 +130,7 @@ export default function Canvas() {
 
         const mouseMoveListener = (e: MouseEvent) => {
             if (canvasViewModel.isMiddleMouseDown && canvasElement.current !== null) {
-                setPosition({
+                canvasViewModel.canvasPosition = ({
                     x: canvasViewModel.canvasPosition.x + (e.clientX - canvasViewModel.middleMouseStart.x),
                     y: canvasViewModel.canvasPosition.y + (e.clientY - canvasViewModel.middleMouseStart.y)
                 });
@@ -146,7 +163,7 @@ export default function Canvas() {
     }, [canvasViewModel,
         dispatch,
         selectedObject,
-        imageData]);
+        imageData, focused]);
     useEffect(() => {
         const listener = (e: KeyboardEvent) => {
             if (e.ctrlKey) {
@@ -191,10 +208,7 @@ export default function Canvas() {
                         if (e.shiftKey) {
                             break;
                         }
-                        if (tempObject != null && tempObject.type === Types.Area) {
-                            const area = tempObject as SelectedArea;
-                            dispatch(selectArea(area));
-                        } else {
+                        if (!(tempObject != null && tempObject.type === Types.Area)) {
                             const historyCanvas = editor.canvas;
                             dispatch(actionReplaceSelectedObject(null));
                             dispatch(pushToHistory(historyCanvas));
@@ -223,14 +237,20 @@ export default function Canvas() {
                 <textarea
                     ref={textArea}
                     style={{
-                        marginLeft: position.x + (selectedObject as TextObject).rectangle.position.x + (selectedObject as TextObject).rectangle.props.strokeWidth / 2,
-                        marginTop: position.y + (selectedObject as TextObject).rectangle.position.y + (selectedObject as TextObject).rectangle.props.strokeWidth / 2,
+                        marginLeft: position.x +
+                            (selectedObject as TextObject).rectangle.position.x * canvasViewModel.scale +
+                            (selectedObject as TextObject).rectangle.props.strokeWidth / 2 * canvasViewModel.scale,
+                        marginTop: position.y +
+                            (selectedObject as TextObject).rectangle.position.y * canvasViewModel.scale +
+                            (selectedObject as TextObject).rectangle.props.strokeWidth / 2 * canvasViewModel.scale,
                         position: "fixed",
-                        width: (selectedObject as TextObject).rectangle.size.x,
-                        height: (selectedObject as TextObject).rectangle.size.y,
+                        width: (selectedObject as TextObject).rectangle.size.x * canvasViewModel.scale -
+                            (selectedObject as TextObject).rectangle.props.strokeWidth / 2 * canvasViewModel.scale,
+                        padding: objectState.padding,
+                        height: "100%",
                         resize: "none",
-                        fontFamily: "monospace",
-                        fontSize: `${(selectedObject as TextObject).textSize}px`,
+                        fontFamily: objectState.fontName,
+                        fontSize: `${(selectedObject as TextObject).textSize * canvasViewModel.scale}px`,
                         backgroundColor: "#FFFFFF00",
                         border: "none",
                         outline: "none",
@@ -247,11 +267,7 @@ export default function Canvas() {
             <canvas id="canvas"
                 ref={canvasElement}
                 className="Canvas"
-                width={0}
-                height={0}
                 style={{ marginLeft: position.x, marginTop: position.y }}
-                // В onMouseDown и onMouseUp не нужны timeout,
-                // так как они вызаываются намного реже, чем onMouseMove
                 onMouseDown={(e) => {
                     if (canvasElement.current) {
                         onMouseDown(e, dispatch, canvasElement.current, editor, canvasViewModel);
@@ -282,6 +298,7 @@ function renderCanvas(canvas: HTMLCanvasElement, scale: number, imageData: Image
     if (context != null) {
         context.scale(scale, scale);
         drawImageData(context, imageData);
+
         if (selectedObject != null) {
             if (selectedObject.type === Types.TextObject) {
                 context.putImageData(drawObject(context, { x: imageData.width, y: imageData.height }, (selectedObject as TextObject).rectangle), 0, 0);

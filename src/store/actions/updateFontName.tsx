@@ -1,0 +1,2 @@
+const UPDATE_FONT_NAME = "UPDATE_FONT_NAME";
+export default UPDATE_FONT_NAME;

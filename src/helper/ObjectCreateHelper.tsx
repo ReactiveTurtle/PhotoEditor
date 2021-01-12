@@ -18,11 +18,15 @@ export function createRectangle(downStart: Vector2, moveEnd: Vector2, objectStat
     };
     return {
         type: Types.Rectangle,
-        position: start,
-        size: {
-            x: end.x - start.x,
-            y: end.y - start.y
+        position: {
+            x: Math.round(start.x),
+            y: Math.round(start.y)
         },
+        size: {
+            x: Math.round(end.x - start.x),
+            y: Math.round(end.y - start.y)
+        },
+        rotation: 0,
         props: {
             fillColor: objectState.fillColor,
             strokeColor: objectState.strokeColor,
@@ -85,7 +89,9 @@ export function createText(downStart: Vector2, moveEnd: Vector2, objectState: Ob
         rectangle: createRectangle(downStart, moveEnd, objectState),
         text: objectState.text,
         textSize: objectState.textSize,
-        textColor: objectState.textColor
+        textColor: objectState.textColor,
+        fontName: objectState.fontName,
+        padding: objectState.padding
     }
 }
 

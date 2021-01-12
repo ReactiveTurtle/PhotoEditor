@@ -2,7 +2,9 @@ import { replaceSelectedObjectWithHistory } from "../../helper/EditorHelper";
 import { createArea, createCircle, createRectangle, createText, createTriangle } from "../../helper/ObjectCreateHelper";
 import { cosinus, length } from "../../helper/VectorHelper";
 import actionReplaceSelectedObject from "../../store/actionCreators/actionReplaceSelectedObject";
+import pushToHistory from "../../store/actionCreators/pushToHistory";
 import removeSelectedObject from "../../store/actionCreators/removeSelectedObject";
+import selectArea from "../../store/actionCreators/selectArea";
 import updateCanvasViewModel from "../../store/actionCreators/updateCanvasViewModel";
 import updateText from "../../store/actionCreators/updateText";
 import { Art } from "../../structures/Art";
@@ -24,6 +26,9 @@ export function onMouseDown(
     canvas: HTMLCanvasElement,
     editor: Editor,
     canvasViewModel: CanvasViewModel): void {
+    if (e.button !== 0) {
+        return;
+    }
     const newCanvasViewModel = {
         ...canvasViewModel
     }
@@ -71,6 +76,8 @@ export function onMouseDown(
     }
     newCanvasViewModel.isCanvasDown = true;
 
+    newCanvasViewModel.start.x = Math.round(newCanvasViewModel.start.x);
+    newCanvasViewModel.start.y = Math.round(newCanvasViewModel.start.y);
     dispatch(updateCanvasViewModel(newCanvasViewModel));
 }
 
@@ -78,6 +85,7 @@ export function onMouseMove(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
     dispatch: Function,
     canvas: HTMLCanvasElement,
     viewModel: ViewModel): void {
+
     const canvasViewModel = viewModel.canvasModel;
     const newCanvasViewModel = {
         ...canvasViewModel
@@ -129,8 +137,8 @@ export function onMouseMove(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
         if (selectedObject != null) {
             replaceSelectedObjectWithHistory(dispatch, editor, null);
         }
-        let deltaX = (moveEnd.x - start.x) / scale;
-        let deltaY = (moveEnd.y - start.y) / scale;
+        let deltaX = Math.round((moveEnd.x - start.x) / scale);
+        let deltaY = Math.round((moveEnd.y - start.y) / scale);
         if (canvas.style.cursor === "pointer") {
             if (tempObject !== null) {
                 if (tempPoint !== null) {
@@ -193,10 +201,10 @@ export function onMouseMove(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
                         tempPoint.y += deltaY;
                     } else if (tempObject.type === Types.Circle) {
                         const circle = tempObject as Circle;
-                        circle.radius = length({
+                        circle.radius = Math.round(length({
                             x: moveEnd.x - circle.position.x,
                             y: moveEnd.y - circle.position.y
-                        });
+                        }));
                     }
                 }
             }
@@ -276,8 +284,15 @@ export function onMouseUp(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
         if (tempObject.type !== Types.Area) {
             dispatch(actionReplaceSelectedObject(tempObject as TextObject | Rectangle | Triangle | Circle | Art));
             newCanvasViewModel.tempObject = null;
-        } else if (canvas.style.cursor === "default") {
+        } else {
+            const area = tempObject as SelectedArea;
+            dispatch(selectArea(area));
+
+            const historyCanvas = editor.canvas;
+            dispatch(pushToHistory(historyCanvas));
+            
             newCanvasViewModel.tempObject = null;
+            dispatch(updateCanvasViewModel(newCanvasViewModel));
         }
     } else if (canvas.style.cursor === "default") {
         if (selectedObject != null) {

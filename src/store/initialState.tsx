@@ -23,7 +23,9 @@ const initialViewModel: ViewModel = {
         strokeWidth: 4,
         text: "",
         textSize: 24,
-        textColor: toRGBAColor("#424242FF")
+        textColor: toRGBAColor("#424242FF"),
+        fontName: "Arial",
+        padding: 0,
     },
     canvasModel: {
         isCanvasDown: false,

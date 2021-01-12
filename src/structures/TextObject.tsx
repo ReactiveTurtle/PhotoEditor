@@ -8,4 +8,6 @@ export type TextObject = {
 	text: string;
 	textColor: RGBAColor;
 	textSize: number;
+	fontName: string;
+	padding: number;
 };

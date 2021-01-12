@@ -1,8 +1,9 @@
 import React, { CSSProperties, useState } from 'react';
 import { ChromePicker, ColorResult } from 'react-color';
-import EditText from '../../edittext/EditText';
 import { toHexColor, toRGBAColor } from '../../helper/ColorHelper';
+import useStyles from '../../objectparams/ObjectParamsStyle';
 import { RGBAColor } from '../../structures/RGBAColor';
+import ReactiveTextField from '../reactivetextfield/ReactiveTextField';
 
 interface ColorPickerProps {
     id: string,
@@ -12,6 +13,7 @@ interface ColorPickerProps {
 }
 
 export default function TextColorPicker(props: ColorPickerProps) {
+    const classes = useStyles();
     const [color, setColor] = useState(props.defaultColor)
     const [displayColorPicker, setDisplayColorPicker] = useState(false)
     const handleChange = (result: ColorResult) => {
@@ -22,7 +24,6 @@ export default function TextColorPicker(props: ColorPickerProps) {
             }
             const newColor = { r: result.rgb.r, g: result.rgb.g, b: result.rgb.b, a: alpha };
             setColor(newColor);
-            (document.getElementById(props.id) as HTMLInputElement).value = `${toHexColor(newColor)}`
             props.onChange(newColor);
         }
     };
@@ -65,9 +66,10 @@ export default function TextColorPicker(props: ColorPickerProps) {
                         </ChromePicker>
                     </div>
                 </div> : null}
-                <EditText
+                <ReactiveTextField
+                    className={classes.root}
                     id={props.id}
-                    title={props.title}
+                    label={props.title}
                     text={toHexColor(color)}
                     type="text"
                     onClick={handleClick}
@@ -76,7 +78,7 @@ export default function TextColorPicker(props: ColorPickerProps) {
                         const newColor = toRGBAColor(e.target.value);
                         setColor(newColor);
                         props.onChange(newColor);
-                    }}></EditText>
+                    }}></ReactiveTextField>
             </div>
         </div >
     );

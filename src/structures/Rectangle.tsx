@@ -6,5 +6,6 @@ export type Rectangle = {
     type: Types;
     position: Vector2;
     size: Vector2;
+    rotation: number;
     props: DrawProps;
 }

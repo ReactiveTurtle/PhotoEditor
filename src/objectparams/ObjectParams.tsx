@@ -1,19 +1,26 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import TextColorPicker from '../components/colopicker/TextColorPicker';
+import ReactiveTextField from '../components/reactivetextfield/ReactiveTextField';
 import { ToolType } from '../components/tool/Tools';
-import EditText from '../edittext/EditText';
 import updateFillColor from '../store/actionCreators/updateFillColor';
 import updateStrokeColor from '../store/actionCreators/updateStrokeColor';
 import updateStrokeWidth from '../store/actionCreators/updateStrokeWidth';
 import updateTextColor from '../store/actionCreators/updateTextColor';
 import updateTextSize from '../store/actionCreators/updateTextSize';
-import initialViewModel from '../store/initialState';
+import updateFontName from '../store/actionCreators/updateFontName';
+import { ObjectState } from '../viewmodel/ObjectState';
 import { ViewModel } from '../viewmodel/ViewModel';
 import './ObjectParams.css';
+import useStyles from './ObjectParamsStyle';
+import updateTextPadding from '../store/actionCreators/updateTextPadding';
 
 function ObjectParams() {
+    const classes = useStyles();
     const dispatch = useDispatch();
+    const objectState: ObjectState = useSelector(
+        (state: ViewModel) => state.objectState
+    )
     const tool: ToolType = useSelector(
         (state: ViewModel) => state.currentTool
     )
@@ -21,50 +28,73 @@ function ObjectParams() {
         <div className="ObjectParams">
             <div className="ParamsList">
                 <TextColorPicker
-                    id="EditText-fill"
+                    id="TextField-fillColor"
                     title="Цвет заливки"
-                    defaultColor={initialViewModel.objectState.fillColor}
+                    defaultColor={objectState.fillColor}
                     onChange={(color) => {
                         dispatch(updateFillColor(color));
                     }}></TextColorPicker>
                 <TextColorPicker
-                    id="EditText-stroke"
+                    id="TextField-strokeColor"
                     title="Цвет контура"
-                    defaultColor={initialViewModel.objectState.strokeColor}
+                    defaultColor={objectState.strokeColor}
                     onChange={(color) => {
                         dispatch(updateStrokeColor(color))
                     }}></TextColorPicker>
-                <EditText
-                    id="EditText-strokeWidth"
-                    title="Толщина контура"
-                    text={`${initialViewModel.objectState.strokeWidth}`}
+                <ReactiveTextField
+                    className={classes.root}
+                    label="Толщина контура"
+                    defaultText={`${objectState.strokeWidth}`}
                     min="0"
                     type="number"
                     onChange={(e) => {
-                        const strokeWidth = e.target.valueAsNumber;
+                        const strokeWidth = parseInt(e.target.value);
                         dispatch(updateStrokeWidth(strokeWidth))
-                    }}></EditText>
+                    }}></ReactiveTextField>
             </div>
             <div className="ParamsList">
                 {tool === ToolType.Text
-                    && <EditText
-                        id="EditText-textSize"
-                        title="Размер текста"
-                        text={`${initialViewModel.objectState.textSize}`}
+                    && <ReactiveTextField
+                        className={classes.root}
+                        label="Размер текста"
+                        defaultText={`${objectState.textSize}`}
                         min="1"
                         type="number"
                         onChange={(e) => {
-                            dispatch(updateTextSize(e.target.valueAsNumber))
-                        }}></EditText>
+                            dispatch(updateTextSize(parseInt(e.target.value)))
+                        }}></ReactiveTextField>
                 }
                 {tool === ToolType.Text
                     && <TextColorPicker
-                        id="EditText-textColor"
+                        id="TextField-textColor"
                         title="Цвет текста"
-                        defaultColor={initialViewModel.objectState.textColor}
+                        defaultColor={objectState.textColor}
                         onChange={(color) => {
                             dispatch(updateTextColor(color));
                         }}></TextColorPicker>
+                }
+                {tool === ToolType.Text
+                    && <ReactiveTextField
+                        className={classes.root}
+                        label="Шрифт"
+                        defaultText={`${objectState.fontName}`}
+                        type="text"
+                        onChange={(e) => {
+                            dispatch(updateFontName(e.target.value))
+                        }}></ReactiveTextField>
+                }
+            </div>
+            <div className="ParamsList">
+                {tool === ToolType.Text
+                    && <ReactiveTextField
+                        className={classes.root}
+                        label="Внутренний отступ"
+                        defaultText={`${objectState.padding}`}
+                        min="0"
+                        type="number"
+                        onChange={(e) => {
+                            dispatch(updateTextPadding(parseInt(e.target.value)))
+                        }}></ReactiveTextField>
                 }
             </div>
         </div>

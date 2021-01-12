@@ -3,7 +3,7 @@ import styles from './App.module.css';
 import SelectSizePopup from './components/selectsizepopup/SelectSizeDialog';
 import Canvas from './components/canvas/Canvas';
 import ObjectParams from './objectparams/ObjectParams';
-import { exportObject, importObject } from './helper/CanvasHelper';
+import { exportObject, importImageUrl, importObject, scaleImageData } from './helper/CanvasHelper';
 import './structures/Vector2';
 import Tools, { ToolType } from './components/tool/Tools';
 import { Editor } from './structures/Editor';
@@ -11,7 +11,6 @@ import { AppBar, Box, SvgIcon, Toolbar, Typography } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, ThemeProvider } from '@material-ui/core/styles';
 
 import { createMuiTheme } from '@material-ui/core/styles';
-import deepPurple from '@material-ui/core/colors/deepPurple';
 import { Art } from './structures/Art';
 import FilterMenu from './components/filtermenu/FilterMenu';
 import { applyBrightnessFilter } from './helper/FilterHelper';
@@ -30,21 +29,25 @@ import editCanvasSize from './store/actionCreators/editCanvasSize';
 import applyFilter from './store/actionCreators/applyFilter';
 import createNewCanvas from './store/actionCreators/createNewCanvas';
 import { replaceSelectedObject } from './helper/EditorHelper';
-import { purple, red } from '@material-ui/core/colors';
+import { cyan, purple, red } from '@material-ui/core/colors';
 import ExportDialog from './components/exportdialog/ExportDialog';
 import ImportDialog from './components/importdialog/ImportDialog';
 import { ImportType } from './structures/ImportType';
+import PexelsSearchDialog from './components/pexelsartdialog/PexelsSearchDialog';
+import { Photo } from 'pexels';
+import PexelsSelectSizeDialog from './components/pexelsartdialog/size/PexelsSelectSizeDialog';
+import ProgressDialog from './components/pexelsartdialog/progress/ProgressDialog';
 
 const theme = createMuiTheme({
     palette: {
         primary: {
-            main: deepPurple["A700"],
+            main: purple["A700"],
         },
         secondary: {
-            main: purple["A700"],
+            main: cyan["A200"] + "8a",
             light: red["A400"],
         },
-    },
+    }
 });
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -60,7 +63,7 @@ const useStyles = makeStyles((theme: Theme) =>
             flexGrow: 1,
             textAlign: "start",
             fontFamily: "cursive"
-        },
+        }
     }),
 );
 
@@ -76,11 +79,15 @@ function App() {
     const currentTool: ToolType = useSelector(
         (state: ViewModel) => state.currentTool
     )
-    
+
     const [isBrightSliderShown, setBrightSliderShown] = useState(false);
     const [tempEditor, setTempEditor] = useState<Editor | null>(null);
     const [isPasteArtDialogOpen, setPasteArtDialogOpen] = useState(false);
+    const [isPexelsArtDialogOpen, setPexelsArtDialogOpen] = useState(false);
     const [pasteArt, setPasteArt] = useState<Art | null>(null);
+
+    const [pexelsPhoto, setPexelsPhoto] = useState<Photo | null>(null);
+    const [pexelsPhotoProgress, setPexelsPhotoProgress] = useState<number>(0);
 
     useEffect(() => {
         const listener = (e: KeyboardEvent) => {
@@ -101,7 +108,9 @@ function App() {
         <div className={styles.App}
             id="App">
             <ThemeProvider theme={theme}>
-                <Canvas></Canvas>
+                <Canvas
+                    focused={!isPasteArtDialogOpen && !isPexelsArtDialogOpen && pexelsPhoto === null}
+                ></Canvas>
                 <Box position="fixed" className={classes.root}>
                     <AppBar position="static" style={{ background: "#6200ea" }}>
                         <Toolbar>
@@ -126,12 +135,15 @@ function App() {
                             </SelectSizePopup>
                             <ImportDialog
                                 onApply={(type) => {
-                                    switch(type) {
+                                    switch (type) {
                                         case ImportType.STORAGE:
                                             importObject((art: Art) => {
                                                 setPasteArt(art);
                                                 setPasteArtDialogOpen(true);
                                             })
+                                            break;
+                                        case ImportType.PEXELS:
+                                            setPexelsArtDialogOpen(true);
                                             break;
                                     }
                                 }}
@@ -141,7 +153,7 @@ function App() {
                                     const newEditor = replaceSelectedObject(editor, null);
                                     exportObject(newEditor.canvas, format, quality);
                                 }}></ExportDialog>
-                            {isPasteArtDialogOpen && <PasteArtDialog
+                            <PasteArtDialog
                                 isOpen={isPasteArtDialogOpen}
                                 onSaveSize={() => {
                                     const isPushToHistory = editor.selectedObject !== null;
@@ -166,7 +178,37 @@ function App() {
                                 onClose={() => {
                                     setPasteArtDialogOpen(false);
                                     setPasteArt(null);
-                                }}></PasteArtDialog>}
+                                }}></PasteArtDialog>
+                            <PexelsSearchDialog
+                                focused={pexelsPhoto === null}
+                                isOpen={isPexelsArtDialogOpen}
+                                onClose={() => {
+                                    setPexelsArtDialogOpen(false);
+                                }}
+                                onApply={(photo) => {
+                                    setPexelsPhoto(photo);
+                                }}></PexelsSearchDialog>
+                            <PexelsSelectSizeDialog
+                                photo={pexelsPhoto}
+                                isOpen={pexelsPhoto !== null}
+                                onResult={(size, url) => {
+                                    if (pexelsPhoto !== null) {
+                                        importImageUrl(url, (art) => {
+                                            art.image = scaleImageData(art.image, size);
+                                            art.size = size;
+                                            setPexelsArtDialogOpen(false);
+                                            setPasteArt(art);
+                                            setPasteArtDialogOpen(true);
+                                        }, (percentage) => {
+                                            setPexelsPhotoProgress(percentage);
+                                        });
+                                    }
+                                    setPexelsPhoto(null);
+                                }}
+                                onClose={() => { setPexelsPhoto(null) }} />
+                            <ProgressDialog
+                                isOpen={pexelsPhotoProgress > 0 && pexelsPhotoProgress < 100}
+                                progress={pexelsPhotoProgress} />
                         </Toolbar>
                     </AppBar>
                     <Tools onSelected={() => {

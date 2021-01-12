@@ -1,4 +1,4 @@
-import { createStyles, List, ListItem, makeStyles, Paper, SvgIcon, Theme, Typography } from '@material-ui/core';
+import { createStyles, List, ListItem, makeStyles, Paper, SvgIcon, Theme } from '@material-ui/core';
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import updateTool from '../../store/actionCreators/updateTool';
@@ -16,7 +16,15 @@ interface ToolsProps {
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
         root: {
-            backgroundColor: "#FFFFFF8a",
+            position: "fixed",
+            margin: "8px 0 0 8px",
+            background: "rgba(255, 255, 255, 0.20)",
+            boxShadow: "0 8px 32px 0 rgba( 255, 255, 255, 0.2 )",
+            backdropFilter: "blur(10.0px)",
+            WebkitBackdropFilter: "blur( 10.0px )",
+            borderRadius: "32px",
+            borderTop: "1px solid rgba( 255, 255, 255, 0.18 )",
+            borderLeft: "1px solid rgba( 255, 255, 255, 0.18 )"
         },
         item: {
             minWidth: "0",
@@ -53,11 +61,6 @@ export default function Tools({ onSelected }: ToolsProps) {
     const classes = useStyles();
     return (
         <Paper className={"Tools-root " + classes.root}>
-            <Typography
-                className="Tools-title"
-                variant="subtitle1" color="inherit">
-                Инструменты
-            </Typography>
             <List className="Tools-list" component="nav" aria-label="Инструменты">
                 <ListItem button
                     onClick={() => onClick(ToolType.Rectangle)}

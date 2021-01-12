@@ -2,6 +2,12 @@
     display: flex;
     width: fit-content;
     align-items: center;
+    background: rgba(255, 255, 255, 0.20);
+    box-shadow: 0 8px 32px 0 rgba( 255, 255, 255, 0.2);
+    backdrop-filter: blur(10.0px);
+    -webkit-backdrop-filter: blur( 10.0px);
+    border-radius: 16px;
+    border: 1px solid rgba( 255, 255, 255, 0.18);
 }
 
 .Tools-title {
@@ -10,7 +16,7 @@
 }
 
 .Tools-list {
-    display: flex;
+    display: block;
     flex-direction: row;
     padding: 0;
 }
