@@ -27,6 +27,11 @@ export default function PexelsSelectSizeDialog(props: PexelsSelectSizeDialogProp
         }
     }
 
+    const handleClose = () =>{
+        setCanApply(true);
+        props.onClose();
+    }
+ 
     useEffect(() => {
         if (!props.isOpen && size.x !== 0) {
             setSize({ x: 0, y: 0 });
@@ -47,7 +52,7 @@ export default function PexelsSelectSizeDialog(props: PexelsSelectSizeDialogProp
                 display: "inline-flex"
             }}
             isOpen={props.isOpen}
-            onClose={props.onClose}
+            onClose={handleClose}
             actions={() => {
                 return (
                     <Button autoFocus onClick={() => handleClick()} color="secondary">
@@ -57,7 +62,7 @@ export default function PexelsSelectSizeDialog(props: PexelsSelectSizeDialogProp
             }}>
             <ReactiveTextField
                 className={classes.searchField}
-                text={size.x.toString()}
+                text={canApply ? size.x.toString() : ""}
                 type="number"
                 label="Ширина"
                 min="0"
@@ -91,7 +96,7 @@ export default function PexelsSelectSizeDialog(props: PexelsSelectSizeDialogProp
 
             <ReactiveTextField
                 className={classes.searchField}
-                text={size.y.toString()}
+                text={canApply ? size.y.toString() : ""}
                 type="number"
                 label="Высота"
                 min="0"

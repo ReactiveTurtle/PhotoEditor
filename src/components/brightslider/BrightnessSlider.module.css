@@ -1,4 +1,4 @@
-.BrightnessSlider-container {
+.BrightnessSliderContainer {
     position: fixed;
     width: 100%;
     bottom: 8px;
@@ -6,7 +6,7 @@
     align-content: center;
 }
 
-.BrightnessSlider-center {
+.BrightnessSliderCenter {
     display: inline-flex;
     align-content: center;
     margin: auto;

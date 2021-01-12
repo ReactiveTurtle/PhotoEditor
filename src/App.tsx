@@ -37,6 +37,7 @@ import PexelsSearchDialog from './components/pexelsartdialog/PexelsSearchDialog'
 import { Photo } from 'pexels';
 import PexelsSelectSizeDialog from './components/pexelsartdialog/size/PexelsSelectSizeDialog';
 import ProgressDialog from './components/pexelsartdialog/progress/ProgressDialog';
+import WebCameraDialog from './components/webcameradialog/WebCameraDialog';
 
 const theme = createMuiTheme({
     palette: {
@@ -47,6 +48,9 @@ const theme = createMuiTheme({
             main: cyan["A200"] + "8a",
             light: red["A400"],
         },
+        text: {
+            secondary: "#FFFFFF"
+        }
     }
 });
 
@@ -88,6 +92,8 @@ function App() {
 
     const [pexelsPhoto, setPexelsPhoto] = useState<Photo | null>(null);
     const [pexelsPhotoProgress, setPexelsPhotoProgress] = useState<number>(0);
+
+    const [isWebCameraDialogOpen, setWebCameraDialogOpen] = useState(false);
 
     useEffect(() => {
         const listener = (e: KeyboardEvent) => {
@@ -144,6 +150,9 @@ function App() {
                                             break;
                                         case ImportType.PEXELS:
                                             setPexelsArtDialogOpen(true);
+                                            break;
+                                        case ImportType.WEB_CAMERA:
+                                            setWebCameraDialogOpen(true);
                                             break;
                                     }
                                 }}
@@ -209,6 +218,13 @@ function App() {
                             <ProgressDialog
                                 isOpen={pexelsPhotoProgress > 0 && pexelsPhotoProgress < 100}
                                 progress={pexelsPhotoProgress} />
+                            <WebCameraDialog
+                                isOpen={isWebCameraDialogOpen}
+                                onClose={() => { setWebCameraDialogOpen(false) }}
+                                onResult={(art) => {
+                                    setPasteArt(art);
+                                    setPasteArtDialogOpen(true);
+                                }} />
                         </Toolbar>
                     </AppBar>
                     <Tools onSelected={() => {

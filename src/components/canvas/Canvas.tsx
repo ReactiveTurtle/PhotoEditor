@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { drawImageData, drawObject } from '../../helper/DrawHelper';
-import './Canvas.css';
+import styles from './Canvas.module.css';
 import { Types } from '../../structures/Type';
 import { Vector2 } from '../../structures/Vector2';
 import { Art } from '../../structures/Art';
@@ -19,12 +19,13 @@ import cutSelectedArea from '../../store/actionCreators/cutSelectedArea';
 import pushToHistory from '../../store/actionCreators/pushToHistory';
 import actionReplaceSelectedObject from '../../store/actionCreators/actionReplaceSelectedObject';
 import { DrawProps } from '../../structures/DrawProps';
-import { replaceSelectedObjectWithHistory } from '../../helper/EditorHelper';
 import { onMouseDown, onMouseMove, onMouseUp } from './CanvasHandler';
 import { CanvasViewModel } from '../../viewmodel/CanvasViewModel';
 import updateCanvasViewModel from '../../store/actionCreators/updateCanvasViewModel';
 import updateText from '../../store/actionCreators/updateText';
 import { toHexColor } from '../../helper/ColorHelper';
+import { ToolType } from '../tool/Tools';
+import { replaceSelectedObjectWithHistory } from '../../helper/EditorHelper';
 
 interface CanvasProps {
     focused: boolean;
@@ -165,6 +166,9 @@ export default function Canvas({ focused }: CanvasProps) {
         selectedObject,
         imageData, focused]);
     useEffect(() => {
+        if (!focused) {
+            return;
+        }
         const listener = (e: KeyboardEvent) => {
             if (e.ctrlKey) {
                 if (e.code === "KeyX") {
@@ -180,24 +184,32 @@ export default function Canvas({ focused }: CanvasProps) {
                         dispatch(removeSelectedObject());
                     }
                 } else if (e.code === "KeyA") {
-                    canvasViewModel.tempObject = createArea({ x: 0, y: 0 }, { x: imageData.width, y: imageData.height }, objectState);
-                    dispatch(updateCanvasViewModel(canvasViewModel));
+                    if (selectedObject?.type !== Types.TextObject) {
+                        const area = createArea({ x: 0, y: 0 }, { x: imageData.width, y: imageData.height }, objectState);
+                        dispatch(selectArea(area));
+
+                        const historyCanvas = editor.canvas;
+                        dispatch(pushToHistory(historyCanvas));
+                    }
                 }
             } else {
+                const handleUnfocus = () => {
+                    replaceSelectedObjectWithHistory(dispatch, editor, null);
+                    canvasViewModel.tempObject = null;
+                    dispatch(updateCanvasViewModel(canvasViewModel));
+                    dispatch(updateText(""));
+                }
                 switch (e.code) {
                     case "Escape":
-                        canvasViewModel.tempObject = null;
-                        dispatch(updateCanvasViewModel(canvasViewModel));
-                        replaceSelectedObjectWithHistory(dispatch, editor, null);
-                        dispatch(updateText(""));
+                        if (!(tempObject != null && tempObject.type === Types.Area)) {
+                            const historyCanvas = editor.canvas;
+                            dispatch(actionReplaceSelectedObject(null));
+                            dispatch(pushToHistory(historyCanvas));
+                        }
+                        handleUnfocus();
                         break;
                     case "Delete":
-                        if (tempObject != null && tempObject.type === Types.Area) {
-                            dispatch(selectArea(tempObject as SelectedArea));
-                            const historyCanvas = editor.canvas;
-                            dispatch(removeSelectedObject());
-                            dispatch(pushToHistory(historyCanvas));
-                        } else {
+                        if (!(tempObject != null && tempObject.type === Types.Area)) {
                             dispatch(removeSelectedObject());
                         }
                         canvasViewModel.tempObject = null;
@@ -208,14 +220,7 @@ export default function Canvas({ focused }: CanvasProps) {
                         if (e.shiftKey) {
                             break;
                         }
-                        if (!(tempObject != null && tempObject.type === Types.Area)) {
-                            const historyCanvas = editor.canvas;
-                            dispatch(actionReplaceSelectedObject(null));
-                            dispatch(pushToHistory(historyCanvas));
-                        }
-                        canvasViewModel.tempObject = null;
-                        dispatch(updateCanvasViewModel(canvasViewModel));
-                        dispatch(updateText(""));
+                        handleUnfocus();
                         break;
                 }
             }
@@ -225,32 +230,39 @@ export default function Canvas({ focused }: CanvasProps) {
             window.removeEventListener("keydown", listener)
         }
     })
+    const [firstTextFocus, setFirstTextFocus] = useState<boolean>(true);
     const textArea = useRef<HTMLTextAreaElement>(null);
     useEffect(() => {
-        textArea.current?.focus();
-    })
+        if (selectedObject?.type === Types.TextObject && firstTextFocus) {
+            setFirstTextFocus(false);
+            textArea.current?.focus();
+        } else if (state.currentTool !== ToolType.Text) {
+            setFirstTextFocus(true);
+        }
+    }, [firstTextFocus, setFirstTextFocus, state, selectedObject])
     return (
         <div
             ref={canvasContainer}
-            className="Canvas-container">
+            className={styles.CanvasContainer}>
             {selectedObject !== null && selectedObject.type === Types.TextObject &&
                 <textarea
                     ref={textArea}
                     style={{
                         marginLeft: position.x +
-                            (selectedObject as TextObject).rectangle.position.x * canvasViewModel.scale +
-                            (selectedObject as TextObject).rectangle.props.strokeWidth / 2 * canvasViewModel.scale,
+                            ((selectedObject as TextObject).rectangle.position.x +
+                                objectState.padding) * canvasViewModel.scale,
                         marginTop: position.y +
-                            (selectedObject as TextObject).rectangle.position.y * canvasViewModel.scale +
-                            (selectedObject as TextObject).rectangle.props.strokeWidth / 2 * canvasViewModel.scale,
+                            ((selectedObject as TextObject).rectangle.position.y +
+                                objectState.padding) * canvasViewModel.scale,
                         position: "fixed",
-                        width: (selectedObject as TextObject).rectangle.size.x * canvasViewModel.scale -
-                            (selectedObject as TextObject).rectangle.props.strokeWidth / 2 * canvasViewModel.scale,
-                        padding: objectState.padding,
-                        height: "100%",
+                        width: ((selectedObject as TextObject).rectangle.size.x -
+                            objectState.padding * 2) * canvasViewModel.scale,
+                        height: ((selectedObject as TextObject).rectangle.size.y -
+                            objectState.padding * 2) * canvasViewModel.scale,
                         resize: "none",
                         fontFamily: objectState.fontName,
                         fontSize: `${(selectedObject as TextObject).textSize * canvasViewModel.scale}px`,
+                        lineHeight: `${(selectedObject as TextObject).textSize * canvasViewModel.scale * 1.25}px`,
                         backgroundColor: "#FFFFFF00",
                         border: "none",
                         outline: "none",
@@ -266,11 +278,11 @@ export default function Canvas({ focused }: CanvasProps) {
 
             <canvas id="canvas"
                 ref={canvasElement}
-                className="Canvas"
+                className={styles.Canvas}
                 style={{ marginLeft: position.x, marginTop: position.y }}
                 onMouseDown={(e) => {
                     if (canvasElement.current) {
-                        onMouseDown(e, dispatch, canvasElement.current, editor, canvasViewModel);
+                        onMouseDown(e, dispatch, canvasElement.current, state);
                     }
                 }}
                 onMouseMove={(e) => {

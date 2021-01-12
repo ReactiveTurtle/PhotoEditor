@@ -1,6 +1,6 @@
 import { createStyles, Fab, makeStyles, Slider, SvgIcon, Theme } from '@material-ui/core';
 import React, { useState } from 'react';
-import './BrightnessSlider.css';
+import styles from './BrightnessSlider.module.css';
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -22,8 +22,8 @@ export default function BrightnessSlider({ onApply, onChange }: BrightnessSlider
     const classes = useStyles();
     const [value, setValue] = useState<number>(1)
     return (
-        <div className='BrightnessSlider-container'>
-            <div className='BrightnessSlider-center'>
+        <div className={styles.BrightnessSliderContainer}>
+            <div className={styles.BrightnessSliderCenter}>
                 <Slider
                     className={classes.slider}
                     defaultValue={1}

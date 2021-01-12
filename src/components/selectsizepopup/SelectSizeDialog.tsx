@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import './SelectSizeDialog.css';
-import '../../index.css';
 import { Vector2 } from '../../structures/Vector2';
 import { Button, IconButton } from '@material-ui/core';
 import { useDispatch } from 'react-redux';
@@ -66,8 +64,7 @@ export default function SelectSizeDialog(props: SelectSizeDialogProps) {
                     min="0"
                     onChange={(e) => {
                         setCanApply(e.target.value !== "");
-                        if (e.target.value !== "")
-                            size.x = Math.abs(parseInt(e.target.value))
+                        size.x = Math.abs(parseInt(e.target.value))
                     }} />
 
                 <ReactiveTextField
@@ -77,8 +74,7 @@ export default function SelectSizeDialog(props: SelectSizeDialogProps) {
                     min="0"
                     onChange={(e) => {
                         setCanApply(e.target.value !== "");
-                        if (e.target.value !== "")
-                            size.y = Math.abs(parseInt(e.target.value))
+                        size.y = Math.abs(parseInt(e.target.value))
                     }} />
             </ReactiveDialog>
         </div >

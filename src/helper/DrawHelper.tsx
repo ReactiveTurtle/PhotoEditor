@@ -116,7 +116,6 @@ function drawCircle(ctx: CanvasRenderingContext2D,
     circle: Circle
 ): ImageData | undefined {
     ctx.beginPath();
-    ctx.moveTo(circle.position.x + circle.radius, circle.position.y);
     ctx.arc(circle.position.x, circle.position.y, circle.radius, 0, Math.PI * 2);
     ctx.closePath();
 
@@ -125,9 +124,15 @@ function drawCircle(ctx: CanvasRenderingContext2D,
     ctx.fill();
 
     if (circle.props.strokeWidth > 0) {
-        ctx.lineWidth = circle.props.strokeWidth;
+        const strokeWidth = circle.props.strokeWidth;
+        ctx.lineWidth = strokeWidth;
         ctx.globalAlpha = circle.props.strokeColor.a;
         ctx.strokeStyle = getRGB(circle.props.strokeColor);
+
+        ctx.beginPath();
+        ctx.arc(circle.position.x, circle.position.y, circle.radius + strokeWidth / 2, 0, Math.PI * 2);
+        ctx.closePath();
+
         ctx.stroke();
     }
     return ctx.getImageData(0, 0, size.x, size.y);
@@ -170,10 +175,10 @@ function drawText(ctx: CanvasRenderingContext2D,
     canvasTxt.vAlign = "top";
     canvasTxt.lineHeight = text.textSize * 1.25;
     canvasTxt.drawText(ctx, text.text,
-        text.rectangle.position.x + 2 + padding,
+        text.rectangle.position.x + padding,
         text.rectangle.position.y + padding,
-        text.rectangle.size.x - padding,
-        text.rectangle.size.y - padding);
+        text.rectangle.size.x - padding * 2,
+        text.rectangle.size.y - padding * 2);
 
     return ctx.getImageData(0, 0, size.x, size.y);
 }

@@ -106,10 +106,13 @@ export function createArea(downStart: Vector2, moveEnd: Vector2, objectState: Ob
     };
     return {
         type: Types.Area,
-        position: start,
+        position: {
+            x: Math.round(start.x),
+            y: Math.round(start.y),
+        },
         size: {
-            x: end.x - start.x,
-            y: end.y - start.y
+            x: Math.round(end.x - start.x),
+            y: Math.round(end.y - start.y)
         },
     }
 }

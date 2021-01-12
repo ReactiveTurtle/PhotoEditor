@@ -1,4 +1,4 @@
-.Tools-root {
+.ToolsRoot {
     display: flex;
     width: fit-content;
     align-items: center;
@@ -10,12 +10,7 @@
     border: 1px solid rgba( 255, 255, 255, 0.18);
 }
 
-.Tools-title {
-    font: 600 16px cursive;
-    padding: 16px;
-}
-
-.Tools-list {
+.ToolsList {
     display: block;
     flex-direction: row;
     padding: 0;

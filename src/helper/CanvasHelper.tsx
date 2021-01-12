@@ -47,6 +47,7 @@ export function createNewCanvas(editor: Editor, size: Vector2): Editor {
 }
 
 export function editCanvasSize(editor: Editor, size: Vector2): Editor {
+	console.log(size);
 	let imageData = new ImageData(size.x, size.y);
 	imageData.data.fill(255);
 	let minWidth = Math.min(size.x, editor.canvas.width);
@@ -78,6 +79,7 @@ export function cutSelectedArea(editor: Editor) {
 }
 
 export function selectArea(editor: Editor, selectedArea: SelectedArea): Editor {
+	console.log(selectedArea)
 	let art: Art = {
 		type: Types.Art,
 		image: new ImageData(selectedArea.size.x, selectedArea.size.y),

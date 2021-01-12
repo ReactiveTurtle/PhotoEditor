@@ -11,7 +11,7 @@ import updateTextSize from '../store/actionCreators/updateTextSize';
 import updateFontName from '../store/actionCreators/updateFontName';
 import { ObjectState } from '../viewmodel/ObjectState';
 import { ViewModel } from '../viewmodel/ViewModel';
-import './ObjectParams.css';
+import styles from './ObjectParams.module.css';
 import useStyles from './ObjectParamsStyle';
 import updateTextPadding from '../store/actionCreators/updateTextPadding';
 
@@ -25,8 +25,8 @@ function ObjectParams() {
         (state: ViewModel) => state.currentTool
     )
     return (
-        <div className="ObjectParams">
-            <div className="ParamsList">
+        <div className={styles.ObjectParams}>
+            <div className={styles.ParamsList}>
                 <TextColorPicker
                     id="TextField-fillColor"
                     title="Цвет заливки"
@@ -52,7 +52,7 @@ function ObjectParams() {
                         dispatch(updateStrokeWidth(strokeWidth))
                     }}></ReactiveTextField>
             </div>
-            <div className="ParamsList">
+            <div className={styles.ParamsList}>
                 {tool === ToolType.Text
                     && <ReactiveTextField
                         className={classes.root}
@@ -84,7 +84,7 @@ function ObjectParams() {
                         }}></ReactiveTextField>
                 }
             </div>
-            <div className="ParamsList">
+            <div className={styles.ParamsList}>
                 {tool === ToolType.Text
                     && <ReactiveTextField
                         className={classes.root}

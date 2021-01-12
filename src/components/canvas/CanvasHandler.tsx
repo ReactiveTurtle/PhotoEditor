@@ -9,14 +9,12 @@ import updateCanvasViewModel from "../../store/actionCreators/updateCanvasViewMo
 import updateText from "../../store/actionCreators/updateText";
 import { Art } from "../../structures/Art";
 import { Circle } from "../../structures/Circle";
-import { Editor } from "../../structures/Editor";
 import { Rectangle } from "../../structures/Rectangle";
 import { SelectedArea } from "../../structures/SelectedArea";
 import { TextObject } from "../../structures/TextObject";
 import { Triangle } from "../../structures/Triangle";
 import { Types } from "../../structures/Type";
 import { Vector2 } from "../../structures/Vector2";
-import { CanvasViewModel } from "../../viewmodel/CanvasViewModel";
 import { ViewModel } from "../../viewmodel/ViewModel";
 import { ToolType } from "../tool/Tools";
 
@@ -24,11 +22,12 @@ export function onMouseDown(
     e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
     dispatch: Function,
     canvas: HTMLCanvasElement,
-    editor: Editor,
-    canvasViewModel: CanvasViewModel): void {
+    viewModel: ViewModel): void {
     if (e.button !== 0) {
         return;
     }
+    const editor = viewModel.editor;
+    const canvasViewModel = viewModel.canvasModel;
     const newCanvasViewModel = {
         ...canvasViewModel
     }
@@ -67,6 +66,11 @@ export function onMouseDown(
         }
     } else {
         if (selectedObject != null) {
+            if (selectedObject.type === Types.TextObject) {
+                const textObject = editor.selectedObject as TextObject;
+                textObject.fontName = viewModel.objectState.fontName;
+                textObject.padding = viewModel.objectState.padding;
+            }
             replaceSelectedObjectWithHistory(dispatch, editor, null);
         }
         newCanvasViewModel.start = {
@@ -76,8 +80,6 @@ export function onMouseDown(
     }
     newCanvasViewModel.isCanvasDown = true;
 
-    newCanvasViewModel.start.x = Math.round(newCanvasViewModel.start.x);
-    newCanvasViewModel.start.y = Math.round(newCanvasViewModel.start.y);
     dispatch(updateCanvasViewModel(newCanvasViewModel));
 }
 
@@ -137,8 +139,8 @@ export function onMouseMove(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
         if (selectedObject != null) {
             replaceSelectedObjectWithHistory(dispatch, editor, null);
         }
-        let deltaX = Math.round((moveEnd.x - start.x) / scale);
-        let deltaY = Math.round((moveEnd.y - start.y) / scale);
+        let deltaX = (moveEnd.x - start.x) / scale;
+        let deltaY = (moveEnd.y - start.y) / scale;
         if (canvas.style.cursor === "pointer") {
             if (tempObject !== null) {
                 if (tempPoint !== null) {
@@ -201,6 +203,7 @@ export function onMouseMove(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
                         tempPoint.y += deltaY;
                     } else if (tempObject.type === Types.Circle) {
                         const circle = tempObject as Circle;
+                        console.log(circle);
                         circle.radius = Math.round(length({
                             x: moveEnd.x - circle.position.x,
                             y: moveEnd.y - circle.position.y
@@ -290,7 +293,7 @@ export function onMouseUp(e: React.MouseEvent<HTMLCanvasElement, MouseEvent>,
 
             const historyCanvas = editor.canvas;
             dispatch(pushToHistory(historyCanvas));
-            
+
             newCanvasViewModel.tempObject = null;
             dispatch(updateCanvasViewModel(newCanvasViewModel));
         }
@@ -385,6 +388,7 @@ function setupCursor(canvas: HTMLCanvasElement,
             const radius = circle.radius * scale;
             const distance = length({ x: moveEnd.x - position.x, y: moveEnd.y - position.y });
             if (distance >= radius - 12 && distance <= radius + 12) {
+                setTempPoint(position);
                 canvas.style.cursor = "pointer";
             } else if (length({ x: moveEnd.x - position.x, y: moveEnd.y - position.y }) < Math.max(radius - 12, 0)) {
                 canvas.style.cursor = "grab";

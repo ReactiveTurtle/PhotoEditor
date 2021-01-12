@@ -25,10 +25,11 @@ import ToolTypeAction from "../actions/types/ToolTypeAction";
 import Vector2Action from "../actions/types/Vector2Action";
 import UNDO_HISTORY from "../actions/undoHistory";
 import UPDATE_TOOL from "../actions/updateTool";
-import updateEditor from "./updateEditor";
 import updateObjectState from "./updateObjectState";
 import UPDATE_CANVAS_VIEW_MODEL from "../actions/updateCanvasViewModel";
 import CanvasViewModelAction from "../actions/types/CanvasViewModelAction";
+import CREATE_NEW_CANVAS from "../actions/createNewCanvas";
+import EDIT_CANVAS_SIZE from "../actions/editCanvasSize";
 
 const reducers: Reducer<ViewModel | undefined,
     EditorAction |
@@ -82,7 +83,6 @@ const reducers: Reducer<ViewModel | undefined,
                 }
             case SELECT_AREA:
                 const area = selectArea(editor, (action as SelectedAreaAction).value);
-                console.log(area);
                 return {
                     ...state,
                     editor: area
@@ -108,21 +108,51 @@ const reducers: Reducer<ViewModel | undefined,
                     ...state,
                     canvasModel: (action as CanvasViewModelAction).value
                 }
-            default:
-                const updatedEditor = updateEditor(state.editor, action as SelectedObjectAction | Vector2Action);
-                if (updatedEditor === undefined) {
-                    throw new Error();
+            case CREATE_NEW_CANVAS:
+                const sizeCreate = (action as Vector2Action).value;
+                const newCanvas = new ImageData(sizeCreate.x, sizeCreate.y);
+                newCanvas.data.fill(255);
+                return {
+                    ...state,
+                    editor: {
+                        ...state.editor,
+                        canvas: newCanvas
+                    },
+                    imageHistory: pushToHistory(imageHistory, newCanvas)
                 }
+            case EDIT_CANVAS_SIZE:
+                const sizeEdit = (action as Vector2Action).value;
+                let imageData = new ImageData(sizeEdit.x, sizeEdit.y);
+                imageData.data.fill(255);
+                const canvas = state.editor.canvas;
+                let minWidth = Math.min(sizeEdit.x, canvas.width);
+                let minHeight = Math.min(sizeEdit.y, canvas.height);
+
+                for (let i = 0; i < minHeight; i++) {
+                    for (let j = 0; j < minWidth; j++) {
+                        let dataIndex = (i * sizeEdit.x + j) * 4;
+                        let canvasDataIndex = (i * canvas.width + j) * 4;
+                        for (let k = 0; k < 4; k++) {
+                            imageData.data[dataIndex + k] = canvas.data[canvasDataIndex + k];
+                        }
+                    }
+                }
+                return {
+                    ...state,
+                    editor: {
+                        ...state.editor,
+                        canvas: imageData
+                    },
+                    imageHistory: pushToHistory(imageHistory, imageData)
+                }
+            default:
                 const objectState = updateObjectState(state.objectState, (action as RGBAColorAction | NumberAction | StringAction));
                 if (objectState === undefined) {
                     throw new Error();
                 }
                 return {
-                    editor: updatedEditor,
-                    imageHistory: state.imageHistory,
-                    currentTool: state.currentTool,
+                    ...state,
                     objectState: objectState,
-                    canvasModel: state.canvasModel
                 }
         }
     }

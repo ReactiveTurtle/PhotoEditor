@@ -3,7 +3,7 @@ import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import updateTool from '../../store/actionCreators/updateTool';
 import { ViewModel } from '../../viewmodel/ViewModel';
-import './Tools.css';
+import styles from'./Tools.module.css';
 
 export enum ToolType {
     Rectangle = 0, Triangle = 1, Circle = 2, Text = 3, Area = 4
@@ -60,8 +60,8 @@ export default function Tools({ onSelected }: ToolsProps) {
     };
     const classes = useStyles();
     return (
-        <Paper className={"Tools-root " + classes.root}>
-            <List className="Tools-list" component="nav" aria-label="Инструменты">
+        <Paper className={styles.ToolsRoot + " " + classes.root}>
+            <List className={styles.ToolsList} component="nav" aria-label="Инструменты">
                 <ListItem button
                     onClick={() => onClick(ToolType.Rectangle)}
                     className={classes.item + " " + (currentTool === ToolType.Rectangle ? classes.selectedItem : "")}>
